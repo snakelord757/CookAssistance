@@ -1,5 +1,9 @@
 package com.cookassistance.server
 
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation as ClientContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -13,6 +17,8 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import kotlinx.serialization.json.Json
+
+val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
 class RecipeStore(
     private val recipes: List<Recipe>,
@@ -28,7 +34,7 @@ class RecipeStore(
 }
 
 fun Application.recipeModule(store: RecipeStore) {
-    install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true; encodeDefaults = true }) }
+    install(ContentNegotiation) { json(json) }
     routing {
         get("/health") { call.respond(mapOf("status" to "ok")) }
 
@@ -71,5 +77,19 @@ fun Application.recipeModule(store: RecipeStore) {
 
 fun main() {
     val store = RecipeStore(recipes, collections, dishOfTheDayId)
-    embeddedServer(Netty, host = "127.0.0.1", port = 8080) { recipeModule(store) }.start(wait = true)
+    val http = HttpClient(OkHttp) {
+        expectSuccess = true
+        install(ClientContentNegotiation) { json(json) }
+        install(HttpTimeout) { requestTimeoutMillis = 12_000; connectTimeoutMillis = 5_000; socketTimeoutMillis = 12_000 }
+    }
+    val service = DeepSeekAssistant(
+        http,
+        System.getenv("DEEPSEEK_API_KEY").orEmpty(),
+        System.getenv("DEEPSEEK_MODEL") ?: "deepseek-flash",
+        store,
+    )
+    embeddedServer(Netty, host = "127.0.0.1", port = 8080) {
+        recipeModule(store)
+        assistantModule(service)
+    }.start(wait = true)
 }

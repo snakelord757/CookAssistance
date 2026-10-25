@@ -25,6 +25,10 @@
     <string name="speech_error">Не удалось распознать речь. Попробуйте ещё раз.</string>
     <string name="question_label">Ваш вопрос</string>
     <string name="question_hint">Задайте вопрос голосом — он появится здесь.</string>
+    <string name="ask">Спросить</string>
+    <string name="thinking">Думаю…</string>
+    <string name="ignored">Задайте вопрос по выбранному рецепту.</string>
+    <string name="assist_error">Помощник недоступен. Проверьте подключение и настройку сервера, затем повторите вопрос.</string>
     <string name="ingredients">Ингредиенты</string>
     <string name="steps">Шаги приготовления</string>
     <string name="type_soup">Суп</string>

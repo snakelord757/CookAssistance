@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -33,55 +34,66 @@ class CookViewModelTest {
         }
     }
 
+    private class FakeAssistant(var result: AssistReply = AssistReply(), var fail: Boolean = false) : Assistant {
+        val calls = mutableListOf<Pair<String, String>>()
+        override suspend fun ask(id: String, question: String): AssistReply {
+            calls += id to question
+            if (fail) error("offline")
+            return result
+        }
+    }
+
     private fun recipe(id: String) = Recipe(
         id = id, title = "Борщ", description = "Суп", type = "soup",
         ingredients = listOf(Ingredient("Свекла", 2.0, "шт")),
         steps = listOf("Варите"), cookingTimeMin = 90, servings = 6, imageUrl = "https://x",
     )
 
+    private fun vm(repo: RecipeRepository, assistant: Assistant = FakeAssistant()) = CookViewModel(repo, assistant)
+
     // catalog
 
     @Test fun catalogSuccessShowsRecipes() = runTest(dispatcher) {
-        val vm = CookViewModel(FakeRepo(listOf(recipe("r1"), recipe("r2"))))
+        val model = vm(FakeRepo(listOf(recipe("r1"), recipe("r2"))))
         runCurrent()
-        val content = vm.catalog.value as CatalogUiState.Content
+        val content = model.catalog.value as CatalogUiState.Content
         assertEquals(listOf("r1", "r2"), content.recipes.map { it.id })
     }
 
     @Test fun catalogEmptyListShowsEmpty() = runTest(dispatcher) {
-        val vm = CookViewModel(FakeRepo(emptyList()))
+        val model = vm(FakeRepo(emptyList()))
         runCurrent()
-        assertEquals(CatalogUiState.Empty, vm.catalog.value)
+        assertEquals(CatalogUiState.Empty, model.catalog.value)
     }
 
     @Test fun catalogFailureShowsErrorAndRetryRecovers() = runTest(dispatcher) {
         val repo = FakeRepo(listOf(recipe("r1")), fail = true)
-        val vm = CookViewModel(repo)
+        val model = vm(repo)
         runCurrent()
-        assertEquals(CatalogUiState.Error, vm.catalog.value)
+        assertEquals(CatalogUiState.Error, model.catalog.value)
         repo.fail = false
-        vm.loadCatalog(); runCurrent()
-        assertTrue(vm.catalog.value is CatalogUiState.Content)
+        model.loadCatalog(); runCurrent()
+        assertTrue(model.catalog.value is CatalogUiState.Content)
     }
 
     // detail
 
     @Test fun selectLoadsDetail() = runTest(dispatcher) {
-        val vm = CookViewModel(FakeRepo(listOf(recipe("r1"), recipe("r2"))))
+        val model = vm(FakeRepo(listOf(recipe("r1"), recipe("r2"))))
         runCurrent()
-        vm.select("r1"); runCurrent()
-        assertEquals("r1", (vm.detail.value as DetailUiState.Content).recipe.id)
+        model.select("r1"); runCurrent()
+        assertEquals("r1", (model.detail.value as DetailUiState.Content).recipe.id)
     }
 
     @Test fun selectFailureShowsErrorAndRetryRecovers() = runTest(dispatcher) {
         val repo = FakeRepo(listOf(recipe("r1"))).apply { getFail = true }
-        val vm = CookViewModel(repo)
+        val model = vm(repo)
         runCurrent()
-        vm.select("r1"); runCurrent()
-        assertEquals(DetailUiState.Error, vm.detail.value)
+        model.select("r1"); runCurrent()
+        assertEquals(DetailUiState.Error, model.detail.value)
         repo.getFail = false
-        vm.select("r1"); runCurrent()
-        assertTrue(vm.detail.value is DetailUiState.Content)
+        model.select("r1"); runCurrent()
+        assertTrue(model.detail.value is DetailUiState.Content)
     }
 
     @Test fun switchingRecipeDiscardsStaleDetail() = runTest(dispatcher) {
@@ -90,37 +102,73 @@ class CookViewModelTest {
             override suspend fun list(): List<Recipe> = listOf(recipe("r1"), recipe("r2"))
             override suspend fun get(id: String): Recipe = if (id == "r1") pending.await() else recipe("r2")
         }
-        val vm = CookViewModel(repo)
+        val model = vm(repo)
         runCurrent()
-        vm.select("r1"); runCurrent()
-        assertTrue(vm.detail.value is DetailUiState.Loading)
-        vm.select("r2"); runCurrent()
-        assertEquals("r2", (vm.detail.value as DetailUiState.Content).recipe.id)
+        model.select("r1"); runCurrent()
+        assertTrue(model.detail.value is DetailUiState.Loading)
+        model.select("r2"); runCurrent()
+        assertEquals("r2", (model.detail.value as DetailUiState.Content).recipe.id)
         pending.complete(recipe("r1")); runCurrent()
-        assertEquals("r2", (vm.detail.value as DetailUiState.Content).recipe.id)
+        assertEquals("r2", (model.detail.value as DetailUiState.Content).recipe.id)
     }
 
     // cooking / recognition
 
     @Test fun recognizedTextIsStoredAsStringAndBounded() = runTest(dispatcher) {
-        val vm = CookViewModel(FakeRepo(listOf(recipe("r1"))))
+        val model = vm(FakeRepo(listOf(recipe("r1"))))
         runCurrent()
-        vm.startCooking()
-        vm.question("Сколько варить свеклу?")
-        assertEquals("Сколько варить свеклу?", vm.cooking.value.question)
-        vm.question("a".repeat(700))
-        assertEquals(500, vm.cooking.value.question.length)
+        model.startCooking("r1")
+        model.question("Сколько варить свеклу?")
+        assertEquals("Сколько варить свеклу?", model.cooking.value.question)
+        model.question("a".repeat(700))
+        assertEquals(500, model.cooking.value.question.length)
     }
 
     @Test fun startAndStopCookingResetQuestion() = runTest(dispatcher) {
-        val vm = CookViewModel(FakeRepo(listOf(recipe("r1"))))
+        val model = vm(FakeRepo(listOf(recipe("r1"))))
         runCurrent()
-        vm.startCooking()
-        vm.question("Вопрос")
-        assertEquals("Вопрос", vm.cooking.value.question)
-        vm.stopCooking()
-        assertEquals("", vm.cooking.value.question)
-        vm.startCooking()
-        assertEquals("", vm.cooking.value.question)
+        model.startCooking("r1")
+        model.question("Вопрос")
+        assertEquals("Вопрос", model.cooking.value.question)
+        model.stopCooking()
+        assertEquals("", model.cooking.value.question)
+        model.startCooking("r1")
+        assertEquals("", model.cooking.value.question)
+    }
+
+    // assistant
+
+    @Test fun askSendsQuestionAndShowsAnswer() = runTest(dispatcher) {
+        val assistant = FakeAssistant(result = AssistReply(answer = "Варите 10 минут"))
+        val model = vm(FakeRepo(listOf(recipe("r1"))), assistant)
+        runCurrent()
+        model.startCooking("r1")
+        model.question("Сколько варить?")
+        model.ask(); runCurrent()
+        assertEquals(listOf("r1" to "Сколько варить?"), assistant.calls)
+        assertEquals("Варите 10 минут", model.cooking.value.answer)
+        assertFalse(model.cooking.value.thinking)
+    }
+
+    @Test fun askFailureShowsError() = runTest(dispatcher) {
+        val assistant = FakeAssistant(fail = true)
+        val model = vm(FakeRepo(listOf(recipe("r1"))), assistant)
+        runCurrent()
+        model.startCooking("r1")
+        model.question("Сколько варить?")
+        model.ask(); runCurrent()
+        assertTrue(model.cooking.value.assistError)
+        assertFalse(model.cooking.value.thinking)
+    }
+
+    @Test fun ignoredReplyDoesNotShowAnswer() = runTest(dispatcher) {
+        val assistant = FakeAssistant(result = AssistReply(ignored = true))
+        val model = vm(FakeRepo(listOf(recipe("r1"))), assistant)
+        runCurrent()
+        model.startCooking("r1")
+        model.question("Какая погода?")
+        model.ask(); runCurrent()
+        assertTrue(model.cooking.value.ignored)
+        assertEquals("", model.cooking.value.answer)
     }
 }

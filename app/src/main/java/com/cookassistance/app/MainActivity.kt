@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable private fun cookViewModel(): CookViewModel {
     val app = LocalContext.current.applicationContext as CookApplication
-    return viewModel(factory = viewModelFactory { initializer { CookViewModel(app.recipes) } })
+    return viewModel(factory = viewModelFactory { initializer { CookViewModel(app.recipes, app.assistant) } })
 }
 
 @Composable fun CookApp(vm: CookViewModel = cookViewModel()) {
@@ -60,8 +60,8 @@ class MainActivity : ComponentActivity() {
                     DetailScreen(detail, { vm.select(key.id) }, { back(key) }, { navigation.open(key, revision, Cooking(key.id)) })
                 }
                 entry<Cooking> { key ->
-                    LaunchedEffect(key.id) { vm.startCooking() }
-                    CookingScreen(detail, cooking, vm::question, { back(key) })
+                    LaunchedEffect(key.id) { vm.startCooking(key.id) }
+                    CookingScreen(detail, cooking, vm::question, vm::ask, { back(key) })
                 }
             },
         )

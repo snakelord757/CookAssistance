@@ -17,8 +17,10 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,6 +44,7 @@ fun CookingScreen(
     state: DetailUiState,
     cooking: CookingState,
     onQuestion: (String) -> Unit,
+    onAsk: () -> Unit,
     back: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -89,18 +92,32 @@ fun CookingScreen(
             }
         }
 
-        Button(onClick = { listen() }, enabled = !listening && !recognizing, modifier = Modifier.fillMaxWidth().testTag("microphone_button")) {
+        Button(onClick = { listen() }, enabled = !listening && !recognizing && !cooking.thinking, modifier = Modifier.fillMaxWidth().testTag("microphone_button")) {
             Text(stringResource(R.string.mic))
         }
         if (listening || recognizing) {
             OutlinedButton(onClick = { voice.stop() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.stop)) }
         }
 
-        Text(stringResource(R.string.question_label), style = MaterialTheme.typography.titleMedium)
-        if (cooking.question.isBlank()) {
-            Text(stringResource(R.string.question_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            Text(cooking.question, style = MaterialTheme.typography.bodyLarge)
+        OutlinedTextField(
+            value = cooking.question,
+            onValueChange = onQuestion,
+            label = { Text(stringResource(R.string.question_label)) },
+            modifier = Modifier.fillMaxWidth().testTag("question_input"),
+            minLines = 2,
+            enabled = !cooking.thinking,
+        )
+
+        Button(onClick = { voice.stop(); onAsk() }, enabled = cooking.question.isNotBlank() && !cooking.thinking, modifier = Modifier.fillMaxWidth().testTag("ask_button")) {
+            Text(stringResource(R.string.ask))
+        }
+        when {
+            cooking.thinking -> Text(stringResource(R.string.thinking))
+            cooking.assistError -> Text(stringResource(R.string.assist_error), color = MaterialTheme.colorScheme.error)
+            cooking.ignored -> Text(stringResource(R.string.ignored), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (cooking.answer.isNotBlank()) {
+            Card(Modifier.fillMaxWidth()) { Text(cooking.answer, Modifier.padding(20.dp), style = MaterialTheme.typography.bodyLarge) }
         }
     }
 }

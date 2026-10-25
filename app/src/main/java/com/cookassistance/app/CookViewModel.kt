@@ -23,9 +23,15 @@ sealed interface DetailUiState {
     data object Error : DetailUiState
 }
 
-data class CookingState(val question: String = "")
+data class CookingState(
+    val question: String = "",
+    val answer: String = "",
+    val thinking: Boolean = false,
+    val assistError: Boolean = false,
+    val ignored: Boolean = false,
+)
 
-class CookViewModel(private val recipes: RecipeRepository) : ViewModel() {
+class CookViewModel(private val recipes: RecipeRepository, private val assistant: Assistant) : ViewModel() {
     private val _catalog = MutableStateFlow<CatalogUiState>(CatalogUiState.Loading)
     val catalog: StateFlow<CatalogUiState> = _catalog.asStateFlow()
 
@@ -37,7 +43,9 @@ class CookViewModel(private val recipes: RecipeRepository) : ViewModel() {
 
     private var catalogJob: Job? = null
     private var detailJob: Job? = null
+    private var assistJob: Job? = null
     private var selectedId: String? = null
+    private var cookingId: String? = null
 
     init { loadCatalog() }
 
@@ -73,7 +81,9 @@ class CookViewModel(private val recipes: RecipeRepository) : ViewModel() {
         }
     }
 
-    fun startCooking() {
+    fun startCooking(id: String) {
+        cookingId = id
+        assistJob?.cancel()
         _cooking.value = CookingState()
     }
 
@@ -81,7 +91,29 @@ class CookViewModel(private val recipes: RecipeRepository) : ViewModel() {
         _cooking.update { it.copy(question = text.take(500)) }
     }
 
+    fun ask() {
+        val id = cookingId ?: return
+        val question = _cooking.value.question.trim()
+        if (question.isEmpty() || _cooking.value.thinking) return
+        assistJob?.cancel()
+        _cooking.update { it.copy(thinking = true, answer = "", ignored = false, assistError = false) }
+        assistJob = viewModelScope.launch {
+            try {
+                val reply = assistant.ask(id, question)
+                if (cookingId == id) _cooking.update {
+                    it.copy(thinking = false, answer = if (reply.ignored) "" else reply.answer, ignored = reply.ignored)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                if (cookingId == id) _cooking.update { it.copy(thinking = false, assistError = true) }
+            }
+        }
+    }
+
     fun stopCooking() {
+        cookingId = null
+        assistJob?.cancel()
         _cooking.value = CookingState()
     }
 }

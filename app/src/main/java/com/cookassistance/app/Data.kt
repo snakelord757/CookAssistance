@@ -28,6 +28,12 @@ data class Recipe(
 @Serializable
 data class CollectionInfo(val id: String, val title: String, val description: String)
 
+@Serializable
+data class AssistRequest(val recipeId: String, val question: String)
+
+@Serializable
+data class AssistReply(val answer: String = "", val ignored: Boolean = false)
+
 val recipeJson = Json { ignoreUnknownKeys = true }
 
 fun httpClient() = HttpClient(OkHttp) {
