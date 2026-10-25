@@ -29,6 +29,8 @@ import kotlinx.serialization.Serializable
 @Serializable data class Cooking(val id: String) : NavKey
 @Serializable data object Feedback : NavKey
 @Serializable data object Favorites : NavKey
+@Serializable data object Collections : NavKey
+@Serializable data class CollectionDetail(val id: String, val title: String) : NavKey
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,6 +60,8 @@ class MainActivity : ComponentActivity() {
     val saveError by vm.saveError.collectAsStateWithLifecycle()
     val selectedType by vm.selectedType.collectAsStateWithLifecycle()
     val dishOfTheDay by vm.dishOfTheDay.collectAsStateWithLifecycle()
+    val collections by vm.collections.collectAsStateWithLifecycle()
+    val collectionRecipes by vm.collectionRecipes.collectAsStateWithLifecycle()
     val feedback by fbVm.state.collectAsStateWithLifecycle()
     val stack = rememberNavBackStack(Catalog)
     val navigation = remember(stack) { CookNavigation(stack) }
@@ -75,6 +79,7 @@ class MainActivity : ComponentActivity() {
                         { navigation.open(Catalog, revision, Detail(it.id)) },
                         { navigation.open(Catalog, revision, Feedback) },
                         { navigation.open(Catalog, revision, Favorites) },
+                        { navigation.open(Catalog, revision, Collections) },
                     )
                 }
                 entry<Detail> { key ->
@@ -101,6 +106,13 @@ class MainActivity : ComponentActivity() {
                 }
                 entry<Favorites> {
                     FavoritesScreen(favorites, { navigation.open(Favorites, revision, Detail(it.id)) }, { back(Favorites) })
+                }
+                entry<Collections> {
+                    CollectionsScreen(collections, { navigation.open(Collections, revision, CollectionDetail(it.id, it.title)) }, { back(Collections) })
+                }
+                entry<CollectionDetail> { key ->
+                    LaunchedEffect(key.id) { vm.loadCollection(key.id) }
+                    CollectionDetailScreen(key.title, collectionRecipes, { navigation.open(key, revision, Detail(it.id)) }, { back(key) })
                 }
             },
         )

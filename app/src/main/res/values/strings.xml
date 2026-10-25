@@ -8,6 +8,7 @@
     <string name="empty">Здесь пока нет рецептов</string>
     <string name="all">Все</string>
     <string name="dish_of_the_day">Блюдо дня</string>
+    <string name="collections">Подборки</string>
     <string name="retry">Повторить</string>
     <string name="back">Назад</string>
     <string name="minutes">%1$d мин</string>

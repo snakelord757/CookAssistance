@@ -42,6 +42,7 @@ fun CatalogScreen(
     open: (Recipe) -> Unit,
     openFeedback: () -> Unit,
     openFavorites: () -> Unit,
+    openCollections: () -> Unit,
 ) {
     LazyColumn(
         Modifier.fillMaxSize().safeDrawingPadding().testTag("recipe_list"),
@@ -54,6 +55,7 @@ fun CatalogScreen(
             Text(stringResource(R.string.catalog_subtitle), color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = openFavorites, modifier = Modifier.testTag("favorites_button")) { Text(stringResource(R.string.favorites)) }
+                TextButton(onClick = openCollections, modifier = Modifier.testTag("collections_button")) { Text(stringResource(R.string.collections)) }
                 TextButton(onClick = openFeedback, modifier = Modifier.testTag("feedback_button")) { Text(stringResource(R.string.feedback)) }
             }
         }
