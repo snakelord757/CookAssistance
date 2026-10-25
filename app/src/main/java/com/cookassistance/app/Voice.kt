@@ -94,6 +94,7 @@ class VoiceController(private val context: Context, private val status: (Boolean
     var speaking by remember { mutableStateOf(false) }
     var voiceError by remember { mutableStateOf<Int?>(null) }
     var autoRequested by rememberSaveable { mutableStateOf(false) }
+    var cookingSession by remember(id) { mutableLongStateOf(-1L) }
     val voice = remember(id) { VoiceController(context, { a, b, e -> listening = a; speaking = b; voiceError = e }, { vm.question(it); vm.ask() }) }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) voice.listen() else voiceError = R.string.mic_denied
@@ -102,14 +103,14 @@ class VoiceController(private val context: Context, private val status: (Boolean
         if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) voice.listen()
         else permission.launch(Manifest.permission.RECORD_AUDIO)
     }
-    LaunchedEffect(id) { vm.startCooking(id); if (!autoRequested) { autoRequested = true; listen() } }
+    LaunchedEffect(id) { cookingSession = vm.startCooking(id); if (!autoRequested) { autoRequested = true; listen() } }
     LaunchedEffect(state.answerSequence) {
         if (state.answer.isNotBlank() && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) voice.speak(state.answer)
     }
     DisposableEffect(voice, lifecycle) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) { voice.stop(); vm.cancelRequest() } }
         lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer); voice.close(); vm.stopCooking() }
+        onDispose { lifecycle.removeObserver(observer); voice.close(); vm.stopCooking(cookingSession) }
     }
     Column(Modifier.fillMaxSize().safeDrawingPadding().imePadding().verticalScroll(rememberScrollState()).padding(20.dp).testTag("cooking_screen"), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         TextButton(back) { Text(stringResource(R.string.back)) }

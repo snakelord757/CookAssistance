@@ -24,6 +24,7 @@ class CookViewModel(private val recipes: Recipes, private val assistant: Assista
     private var catalogJob: Job? = null
     private var selectedId: Int? = null
     private var cookingId: Int? = null
+    private var cookingSession = 0L
     init {
         viewModelScope.launch { recipes.favorites.collect { favorites -> mutable.update { it.copy(favorites = favorites) } } }
         reload()
@@ -62,11 +63,13 @@ class CookViewModel(private val recipes: Recipes, private val assistant: Assista
             finally { mutable.update { it.copy(saving = false) } }
         }
     }
-    fun startCooking(id: Int) {
-        if (cookingId == id) return
+    fun startCooking(id: Int): Long {
+        if (cookingId == id) return ++cookingSession
         select(id)
         cookingId = id
+        cookingSession++
         mutable.update { it.copy(answer = "", assistError = false, ignored = false) }
+        return cookingSession
     }
     fun question(value: String) {
         val bounded = value.take(500)
@@ -91,6 +94,9 @@ class CookViewModel(private val recipes: Recipes, private val assistant: Assista
     fun stopCooking() {
         cookingId = null; assistJob?.cancel()
         mutable.update { it.copy(thinking = false, answer = "", ignored = false, assistError = false) }
+    }
+    fun stopCooking(session: Long) {
+        if (cookingId != null && cookingSession == session) stopCooking()
     }
     fun cancelRequest() { assistJob?.cancel(); mutable.update { it.copy(thinking = false) } }
 }

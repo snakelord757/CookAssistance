@@ -136,6 +136,21 @@ class CookViewModelTest {
         assertFalse(vm.state.value.thinking)
     }
 
+    @Test fun staleDisposalCannotStopReplacementSessionForSameRecipe() = runTest(dispatcher) {
+        val assistant = FakeAssistant()
+        val vm = model(FakeRecipes(listOf(first)), assistant)
+        val outgoing = vm.startCooking(1)
+        val current = vm.startCooking(1)
+        assertNotEquals(outgoing, current)
+        vm.question("First step?"); vm.ask(); runCurrent()
+        vm.stopCooking(outgoing)
+        assertTrue(vm.state.value.thinking)
+        assistant.pending.complete(AssistReply("Boil")); runCurrent()
+        assertEquals("Boil", vm.state.value.answer)
+        vm.stopCooking(current)
+        assertEquals("", vm.state.value.answer)
+    }
+
     @Test fun questionIsBoundedAndRestoredWithoutListeningOrSubmitting() = runTest(dispatcher) {
         val saved = SavedStateHandle()
         val recipes = FakeRecipes(listOf(first))

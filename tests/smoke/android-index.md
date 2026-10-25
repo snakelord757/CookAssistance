@@ -1,6 +1,6 @@
 # Android smoke registry
 
-Версия 1.0, AND-001 (план 1.0). Спецификация: [CookAssistance MVP](AND-001-android-mvp.md). Старый [index.md](index.md) относится к CLI-инструментам и не закрывает Android quality gates.
+Версия 1.1, AND-001 и [AND-001-BUG-1](https://trello.com/c/kor5Qp3Z) (план исправления 1.1). Спецификация: [CookAssistance MVP](AND-001-android-mvp.md). Старый [index.md](index.md) относится к CLI-инструментам и не закрывает Android quality gates.
 
 Пути этого реестра согласованы планом AND-001 и контрактом /dev, чтобы не перезаписывать пользовательский CLI index. Создание документов не означает успешного smoke. Исполнять на финальном SHA после интеграции и независимого review; отчёты вне candidate tree.
 
@@ -18,7 +18,10 @@
 | S10 | Rotate/resize/process recreation | P37, T29-M, T29-E | Сохранённый task, фактический новый PID |
 | S11 | Font200%, light/dark, semantics/accessibility | P37, T29-M, T29-E | Фактические window bounds, TalkBack если доступен |
 | S12 | Min/current API permission/voice/error parity | P37, API29 | Платформенные speech/TTS services |
+| S13 | Empty-stack regression, repeated Back/tab, новый владелец cooking-сессии | P37 exact reproduction; P37, T29-M, T29-E navigation/session controls | Реальные UI callbacks; сервер без ключа достаточен для error-path submission, не для live ответа |
 
 P37: CookAssistance_API37 / API37 / x86_64 / 16 KB, compact portrait + landscape. T29-M: Medium_Tablet / API29 / x86 portrait medium. T29-E: тот же планшет landscape expanded. Размеры, настройка, cleanup и evidence подробно в спецификации. Pixel_7/API36.1 — только дополнительная диагностика.
 
 Все строки обязательны; невозможность live AI/audio или определённой конфигурации фиксируется BLOCKED, а не исключением из матрицы. Unit/Compose tests и CLI smoke не заменяют Android MCP. Инструментальные тесты не должны выполняться одновременно с этим реестром на одном serial.
+
+S13 дополняет, а не заменяет S01–S12. Родительский smoke на `29966f143866a02cb20d161a99e6318021c1094c` завершился FAIL; его PASS-подпункты не переносятся на исправленный SHA. Очередь недопройденных подпунктов приведена в конце спецификации; итоговый отчёт сохраняет отдельный результат каждой конфигурации и подстроки.

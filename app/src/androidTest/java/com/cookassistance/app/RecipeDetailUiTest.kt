@@ -46,7 +46,9 @@ class RecipeDetailUiTest {
             }
         }
         compose.onNodeWithTag("cook_button").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("В источнике количество ингредиентов не указано.").performScrollTo().assertIsDisplayed()
+        // Lazy prefetch may expose an unplaced semantics node; scroll through the list.
+        compose.onNodeWithTag("recipe_detail").performScrollToNode(hasText("В источнике количество ингредиентов не указано."))
+        compose.onNodeWithText("В источнике количество ингредиентов не указано.").assertIsDisplayed()
         compose.onNodeWithTag("recipe_detail").performScrollToNode(hasText("2. Boil until tender."))
         compose.onNodeWithText("2. Boil until tender.").assertIsDisplayed()
     }
