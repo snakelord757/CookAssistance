@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">CookAssistance</string>
+    <string name="catalog">Рецепты</string><string name="favorites">Избранное</string>
+    <string name="tagline">Готовьте с уверенностью</string><string name="catalog_subtitle">Выберите блюдо — поможем на каждом шаге</string>
+    <string name="source">Источник: DummyJSON · Рецепт на английском</string>
+    <string name="loading">Загружаем рецепты…</string><string name="load_error">Не удалось загрузить рецепты. Проверьте подключение.</string>
+    <string name="detail_error">Не удалось открыть этот рецепт.</string><string name="retry">Повторить</string>
+    <string name="empty">Здесь пока нет рецептов</string><string name="favorites_empty">Сохраните понравившийся рецепт — он будет доступен без интернета.</string>
+    <string name="back">Назад</string><string name="save">В избранное</string><string name="saved">Убрать из избранного</string>
+    <string name="ingredients">Ингредиенты</string><string name="steps">Шаги приготовления</string>
+    <string name="amount_unknown">В источнике количество ингредиентов не указано.</string>
+    <string name="cook">Приготовить</string><string name="choose_recipe">Выберите рецепт из списка</string>
+    <string name="minutes">%1$d мин</string><string name="servings">Порций: %1$d</string>
+    <string name="save_error">Не удалось сохранить изменения. Попробуйте ещё раз.</string>
+    <string name="assistant">Помощник на кухне</string><string name="assistant_hint">Спросите о шагах, ингредиентах или замене продуктов в этом рецепте.</string>
+    <string name="question">Ваш вопрос</string><string name="send">Спросить</string>
+    <string name="mic">Задать вопрос голосом</string><string name="stop">Остановить</string>
+    <string name="listening">Слушаю…</string><string name="thinking">Думаю…</string><string name="speaking">Говорю…</string>
+    <string name="mic_denied">Для голосового вопроса нужен доступ к микрофону. Можно написать вопрос ниже.</string>
+    <string name="speech_unavailable">Голосовой ввод недоступен. Напишите вопрос ниже.</string>
+    <string name="speech_error">Не удалось распознать речь. Попробуйте ещё раз или напишите вопрос.</string>
+    <string name="tts_unavailable">Озвучка недоступна. Ответ можно прочитать на экране.</string>
+    <string name="assist_error">Помощник недоступен. Проверьте подключение и настройку сервера, затем повторите вопрос.</string>
+    <string name="ignored">Задайте вопрос по выбранному рецепту.</string>
+    <string name="voice_privacy">Распознавание использует голосовую службу устройства. Текст вопроса отправляется помощнику.</string>
+</resources>

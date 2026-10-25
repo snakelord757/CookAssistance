@@ -2,3 +2,13 @@ __pycache__/
 *.pyc
 /workflow/
 /reports/
+
+# Local Android/Gradle outputs
+.gradle/
+.kotlin/
+**/build/
+local.properties
+*.apk
+*.aab
+*.jks
+*.keystore
