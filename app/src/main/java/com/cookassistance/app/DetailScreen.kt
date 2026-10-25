@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 
 @Composable
-fun DetailScreen(state: DetailUiState, retry: () -> Unit, back: () -> Unit) {
+fun DetailScreen(state: DetailUiState, retry: () -> Unit, back: () -> Unit, cook: () -> Unit) {
     LazyColumn(
         Modifier.fillMaxSize().safeDrawingPadding().testTag("recipe_detail"),
         contentPadding = PaddingValues(20.dp),
@@ -47,6 +48,11 @@ fun DetailScreen(state: DetailUiState, retry: () -> Unit, back: () -> Unit) {
                         Text(typeLabel(recipe.type), style = MaterialTheme.typography.labelLarge)
                         Text(stringResource(R.string.minutes, recipe.cookingTimeMin))
                         Text(stringResource(R.string.servings, recipe.servings))
+                    }
+                }
+                item {
+                    Button(onClick = cook, modifier = Modifier.fillMaxWidth().testTag("cook_button")) {
+                        Text(stringResource(R.string.cook))
                     }
                 }
                 item {

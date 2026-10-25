@@ -26,6 +26,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object Catalog : NavKey
 @Serializable data class Detail(val id: String) : NavKey
+@Serializable data class Cooking(val id: String) : NavKey
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,8 +56,9 @@ class MainActivity : ComponentActivity() {
                 entry<Catalog> { CatalogScreen(catalog, vm::loadCatalog, { navigation.open(Catalog, revision, Detail(it.id)) }) }
                 entry<Detail> { key ->
                     LaunchedEffect(key.id) { vm.select(key.id) }
-                    DetailScreen(detail, { vm.select(key.id) }, { back(key) })
+                    DetailScreen(detail, { vm.select(key.id) }, { back(key) }, { navigation.open(key, revision, Cooking(key.id)) })
                 }
+                entry<Cooking> { key -> CookingScreen(detail, { back(key) }) }
             },
         )
     }

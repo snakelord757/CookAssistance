@@ -10,6 +10,8 @@
     <string name="back">Назад</string>
     <string name="minutes">%1$d мин</string>
     <string name="servings">Порций: %1$d</string>
+    <string name="cook">Приступить к готовке</string>
+    <string name="cooking_title">Режим готовки</string>
     <string name="ingredients">Ингредиенты</string>
     <string name="steps">Шаги приготовления</string>
     <string name="type_soup">Суп</string>
