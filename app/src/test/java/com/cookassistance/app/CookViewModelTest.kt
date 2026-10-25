@@ -99,4 +99,28 @@ class CookViewModelTest {
         pending.complete(recipe("r1")); runCurrent()
         assertEquals("r2", (vm.detail.value as DetailUiState.Content).recipe.id)
     }
+
+    // cooking / recognition
+
+    @Test fun recognizedTextIsStoredAsStringAndBounded() = runTest(dispatcher) {
+        val vm = CookViewModel(FakeRepo(listOf(recipe("r1"))))
+        runCurrent()
+        vm.startCooking()
+        vm.question("Сколько варить свеклу?")
+        assertEquals("Сколько варить свеклу?", vm.cooking.value.question)
+        vm.question("a".repeat(700))
+        assertEquals(500, vm.cooking.value.question.length)
+    }
+
+    @Test fun startAndStopCookingResetQuestion() = runTest(dispatcher) {
+        val vm = CookViewModel(FakeRepo(listOf(recipe("r1"))))
+        runCurrent()
+        vm.startCooking()
+        vm.question("Вопрос")
+        assertEquals("Вопрос", vm.cooking.value.question)
+        vm.stopCooking()
+        assertEquals("", vm.cooking.value.question)
+        vm.startCooking()
+        assertEquals("", vm.cooking.value.question)
+    }
 }
