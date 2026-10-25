@@ -7,6 +7,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 sealed interface CatalogUiState {
@@ -22,12 +23,17 @@ sealed interface DetailUiState {
     data object Error : DetailUiState
 }
 
+data class CookingState(val question: String = "")
+
 class CookViewModel(private val recipes: RecipeRepository) : ViewModel() {
     private val _catalog = MutableStateFlow<CatalogUiState>(CatalogUiState.Loading)
     val catalog: StateFlow<CatalogUiState> = _catalog.asStateFlow()
 
     private val _detail = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
     val detail: StateFlow<DetailUiState> = _detail.asStateFlow()
+
+    private val _cooking = MutableStateFlow(CookingState())
+    val cooking: StateFlow<CookingState> = _cooking.asStateFlow()
 
     private var catalogJob: Job? = null
     private var detailJob: Job? = null
@@ -65,5 +71,17 @@ class CookViewModel(private val recipes: RecipeRepository) : ViewModel() {
                 if (selectedId == id) _detail.value = DetailUiState.Error
             }
         }
+    }
+
+    fun startCooking() {
+        _cooking.value = CookingState()
+    }
+
+    fun question(text: String) {
+        _cooking.update { it.copy(question = text.take(500)) }
+    }
+
+    fun stopCooking() {
+        _cooking.value = CookingState()
     }
 }

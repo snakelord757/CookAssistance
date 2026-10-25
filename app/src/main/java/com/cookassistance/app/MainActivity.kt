@@ -44,6 +44,7 @@ class MainActivity : ComponentActivity() {
 @Composable fun CookApp(vm: CookViewModel = cookViewModel()) {
     val catalog by vm.catalog.collectAsStateWithLifecycle()
     val detail by vm.detail.collectAsStateWithLifecycle()
+    val cooking by vm.cooking.collectAsStateWithLifecycle()
     val stack = rememberNavBackStack(Catalog)
     val navigation = remember(stack) { CookNavigation(stack) }
     val revision = navigation.revision
@@ -58,7 +59,10 @@ class MainActivity : ComponentActivity() {
                     LaunchedEffect(key.id) { vm.select(key.id) }
                     DetailScreen(detail, { vm.select(key.id) }, { back(key) }, { navigation.open(key, revision, Cooking(key.id)) })
                 }
-                entry<Cooking> { key -> CookingScreen(detail, { back(key) }) }
+                entry<Cooking> { key ->
+                    LaunchedEffect(key.id) { vm.startCooking() }
+                    CookingScreen(detail, cooking, vm::question, { back(key) })
+                }
             },
         )
     }
