@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">CookAssistance</string>
+    <string name="tagline">Готовьте с уверенностью</string>
+    <string name="recipes_available">Доступно рецептов: %1$d</string>
+    <string name="server_unavailable">Сервер недоступен. Проверьте подключение и повторите.</string>
+    <string name="retry">Повторить</string>
+</resources>
