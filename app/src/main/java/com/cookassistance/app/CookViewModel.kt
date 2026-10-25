@@ -29,6 +29,7 @@ data class CookingState(
     val thinking: Boolean = false,
     val assistError: Boolean = false,
     val ignored: Boolean = false,
+    val answerSequence: Int = 0,
 )
 
 class CookViewModel(private val recipes: RecipeRepository, private val assistant: Assistant) : ViewModel() {
@@ -101,7 +102,12 @@ class CookViewModel(private val recipes: RecipeRepository, private val assistant
             try {
                 val reply = assistant.ask(id, question)
                 if (cookingId == id) _cooking.update {
-                    it.copy(thinking = false, answer = if (reply.ignored) "" else reply.answer, ignored = reply.ignored)
+                    it.copy(
+                        thinking = false,
+                        answer = if (reply.ignored) "" else reply.answer,
+                        ignored = reply.ignored,
+                        answerSequence = it.answerSequence + 1,
+                    )
                 }
             } catch (e: CancellationException) {
                 throw e

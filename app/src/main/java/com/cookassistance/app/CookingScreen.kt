@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,9 +52,10 @@ fun CookingScreen(
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var listening by remember { mutableStateOf(false) }
     var recognizing by remember { mutableStateOf(false) }
+    var speaking by remember { mutableStateOf(false) }
     var voiceError by remember { mutableStateOf<Int?>(null) }
     val voice = remember {
-        VoiceController(context, { l, r, e -> listening = l; recognizing = r; voiceError = e }, onQuestion)
+        VoiceController(context, { l, r, s, e -> listening = l; recognizing = r; speaking = s; voiceError = e }, onQuestion)
     }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) voice.listen() else voiceError = R.string.mic_denied
@@ -64,6 +66,9 @@ fun CookingScreen(
         } else {
             permission.launch(Manifest.permission.RECORD_AUDIO)
         }
+    }
+    LaunchedEffect(cooking.answerSequence) {
+        if (cooking.answer.isNotBlank()) voice.speak(cooking.answer)
     }
     DisposableEffect(voice, lifecycle) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) voice.stop() }
@@ -82,6 +87,7 @@ fun CookingScreen(
         when {
             listening -> Text(stringResource(R.string.listening))
             recognizing -> Text(stringResource(R.string.recognizing))
+            speaking -> Text(stringResource(R.string.speaking))
             voiceError != null -> {
                 Text(stringResource(voiceError!!), color = MaterialTheme.colorScheme.error)
                 if (voiceError == R.string.mic_denied) {

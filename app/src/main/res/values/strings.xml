@@ -16,6 +16,8 @@
     <string name="stop">Остановить</string>
     <string name="listening">Слушаю…</string>
     <string name="recognizing">Распознаю…</string>
+    <string name="speaking">Говорю…</string>
+    <string name="tts_unavailable">Озвучка недоступна. Ответ можно прочитать на экране.</string>
     <string name="mic_denied">Для голосового вопроса нужен доступ к микрофону.</string>
     <string name="open_settings">Открыть настройки</string>
     <string name="speech_unavailable">Голосовой ввод недоступен на этом устройстве.</string>
