@@ -16,7 +16,7 @@ PROFILES = (
     "bugfix", "planer", "tech", "unit-test", "smoke_scenario",
     "smoke", "review", "dev", "product",
 )
-LINK = re.compile(r"\[[^\]\n]*\]\(\s*(?:<([^>\n]*)>|([^\s)]+))(?:\s+[\"'][^\n]*?[\"'])?\s*\)")
+LINK = re.compile(r"\[[^\[\]\n]*\]\(\s*(?:<([^>\n]*)>|([^\s)]+))(?:\s+[\"'][^\n]*?[\"'])?\s*\)")
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 INLINE_CODE = re.compile(r"(`+)(?!`)(.*?)(?<!`)\1(?!`)")
 
@@ -66,7 +66,15 @@ def validate(root: Path) -> list[str]:
         except (OSError, UnicodeError) as exc:
             errors.append(f"Cannot read {label}: {exc}")
             continue
-        for match in LINK.finditer(markdown_prose(content)):
+        prose = markdown_prose(content)
+        for match in LINK.finditer(prose):
+            # An odd run escapes the opening bracket; pairs represent literal
+            # backslashes and leave the bracket active.
+            preceding = match.start() - 1
+            while preceding >= 0 and prose[preceding] == "\\":
+                preceding -= 1
+            if (match.start() - preceding - 1) % 2:
+                continue
             target = match[1] if match[1] is not None else match[2]
             if target.startswith("//") or re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", target):
                 continue

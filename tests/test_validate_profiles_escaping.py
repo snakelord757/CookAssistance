@@ -50,6 +50,10 @@ class EscapedOpeningBracketTests(unittest.TestCase):
         self.write_agents("\\[literal](literal.md) and [active](active.md)\n")
         self.assertEqual(validator.validate(self.root), ["Broken link in AGENTS.md: active.md"])
 
+    def test_escaped_unclosed_prefix_does_not_consume_active_link(self):
+        self.write_agents("\\[literal prefix [active](missing.md)\n")
+        self.assertEqual(validator.validate(self.root), ["Broken link in AGENTS.md: missing.md"])
+
     def test_cli_accepts_literal_link_example(self):
         self.write_agents("\\[literal](missing.md)\n")
         result = subprocess.run(
@@ -58,6 +62,17 @@ class EscapedOpeningBracketTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("PASS:", result.stdout)
+        self.assertEqual(result.stderr, "")
+
+    def test_cli_reports_active_link_after_paired_backslashes(self):
+        self.write_agents("\\\\[active](missing.md)\n")
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT), "--root", str(self.root)],
+            cwd=REPO, capture_output=True, text=True, timeout=20,
+        )
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("Broken link in AGENTS.md: missing.md", result.stdout)
+        self.assertIn("FAIL:", result.stdout)
         self.assertEqual(result.stderr, "")
 
 
