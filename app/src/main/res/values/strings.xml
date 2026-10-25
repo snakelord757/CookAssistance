@@ -1,7 +1,20 @@
 <resources>
     <string name="app_name">CookAssistance</string>
     <string name="tagline">Готовьте с уверенностью</string>
-    <string name="recipes_available">Доступно рецептов: %1$d</string>
-    <string name="server_unavailable">Сервер недоступен. Проверьте подключение и повторите.</string>
+    <string name="catalog_subtitle">Выберите блюдо — поможем на каждом шаге</string>
+    <string name="loading">Загружаем рецепты…</string>
+    <string name="load_error">Не удалось загрузить рецепты. Проверьте подключение.</string>
+    <string name="empty">Здесь пока нет рецептов</string>
     <string name="retry">Повторить</string>
+    <string name="back">Назад</string>
+    <string name="minutes">%1$d мин</string>
+    <string name="recipe_id">Рецепт: %1$s</string>
+    <string name="type_soup">Суп</string>
+    <string name="type_salad">Салат</string>
+    <string name="type_main">Основное блюдо</string>
+    <string name="type_side">Гарнир</string>
+    <string name="type_dessert">Десерт</string>
+    <string name="type_drink">Напиток</string>
+    <string name="type_baking">Выпечка</string>
+    <string name="type_breakfast">Завтрак</string>
 </resources>

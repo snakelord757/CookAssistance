@@ -33,6 +33,7 @@ dependencies {
     implementation(libs.navigation3)
     implementation(libs.ktor.client.core); implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content); implementation(libs.ktor.json)
+    implementation(libs.coil.compose); implementation(libs.coil.network)
     testImplementation(libs.junit); testImplementation(libs.coroutines.test)
     testImplementation(libs.ktor.client.mock)
     androidTestImplementation(platform(libs.compose.bom))
