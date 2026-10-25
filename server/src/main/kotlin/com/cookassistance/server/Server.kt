@@ -85,7 +85,7 @@ fun main() {
     val service = DeepSeekAssistant(
         http,
         System.getenv("DEEPSEEK_API_KEY").orEmpty(),
-        System.getenv("DEEPSEEK_MODEL") ?: "deepseek-flash",
+        System.getenv("DEEPSEEK_MODEL") ?: "deepseek-chat",
         store,
     )
     embeddedServer(Netty, host = "127.0.0.1", port = 8080) {
