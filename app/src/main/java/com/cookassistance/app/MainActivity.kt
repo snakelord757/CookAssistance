@@ -52,32 +52,38 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable fun CookApp() {
+@Composable private fun cookViewModel(): CookViewModel {
     val app = LocalContext.current.applicationContext as CookApplication
-    val vm: CookViewModel = viewModel(factory = viewModelFactory { initializer { CookViewModel(app.recipes, app.assistant, createSavedStateHandle()) } })
+    return viewModel(factory = viewModelFactory { initializer { CookViewModel(app.recipes, app.assistant, createSavedStateHandle()) } })
+}
+
+@Composable fun CookApp(vm: CookViewModel = cookViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val stack = rememberNavBackStack(Browse)
+    val navigation = remember(stack) { CookNavigation(stack) }
+    val revision = navigation.revision
     var favorites by rememberSaveable { mutableStateOf(false) }
-    fun tab(value: Boolean) { vm.stopCooking(); favorites = value; stack.clear(); stack.add(Browse) }
+    fun tab(value: Boolean) { vm.stopCooking(); favorites = value; navigation.root() }
+    fun back(expected: NavKey) { if (navigation.back(expected, revision)) vm.stopCooking() }
     Box(Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }) {
         NavigationSuiteScaffold(navigationSuiteItems = {
             item(selected = !favorites, onClick = { tab(false) }, icon = { Text("◉") }, label = { Text(stringResource(R.string.catalog)) })
             item(selected = favorites, onClick = { tab(true) }, icon = { Text("♡") }, label = { Text(stringResource(R.string.favorites)) })
         }) {
-            NavDisplay(backStack = stack, onBack = { if (stack.size > 1) { vm.stopCooking(); stack.removeAt(stack.lastIndex) } },
+            NavDisplay(backStack = stack, onBack = { back(stack.last()) },
                 entryProvider = entryProvider {
-                    entry<Browse> { Catalog(state, favorites, vm::reload, { stack.add(Detail(it.id)) }) }
+                    entry<Browse> { Catalog(state, favorites, vm::reload, { navigation.open(Browse, revision, Detail(it.id)) }) }
                     entry<Detail> { key ->
                         LaunchedEffect(key.id) { vm.select(key.id) }
                         BoxWithConstraints(Modifier.fillMaxSize()) {
                             if (maxWidth >= 840.dp) Row {
-                                Box(Modifier.weight(0.42f)) { Catalog(state, favorites, vm::reload, { stack[stack.lastIndex] = Detail(it.id) }) }
+                                Box(Modifier.weight(0.42f)) { Catalog(state, favorites, vm::reload, { navigation.open(key, revision, Detail(it.id), replace = true) }) }
                                 VerticalDivider()
-                                Box(Modifier.weight(0.58f)) { RecipeDetail(state, { stack.removeAt(stack.lastIndex) }, { vm.select(key.id) }, vm::toggle, { stack.add(Cooking(key.id)) }) }
-                            } else RecipeDetail(state, { stack.removeAt(stack.lastIndex) }, { vm.select(key.id) }, vm::toggle, { stack.add(Cooking(key.id)) })
+                                Box(Modifier.weight(0.58f)) { RecipeDetail(state, { back(key) }, { vm.select(key.id) }, vm::toggle, { navigation.open(key, revision, Cooking(key.id)) }) }
+                            } else RecipeDetail(state, { back(key) }, { vm.select(key.id) }, vm::toggle, { navigation.open(key, revision, Cooking(key.id)) })
                         }
                     }
-                    entry<Cooking> { key -> CookingScreen(key.id, state, vm, { vm.stopCooking(); stack.removeAt(stack.lastIndex) }) }
+                    entry<Cooking> { key -> CookingScreen(key.id, state, vm, { back(key) }) }
                 })
         }
     }
