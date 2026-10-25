@@ -29,3 +29,16 @@ class AssistantRepository(private val http: HttpClient, private val baseUrl: Str
             setBody(AssistRequest(id, question))
         }.body()
 }
+
+interface FeedbackRepository {
+    suspend fun send(message: String, contact: String)
+}
+
+class NetworkFeedbackRepository(private val http: HttpClient, private val baseUrl: String) : FeedbackRepository {
+    override suspend fun send(message: String, contact: String) {
+        http.post("${baseUrl.trimEnd('/')}/feedback") {
+            contentType(ContentType.Application.Json)
+            setBody(FeedbackRequest(message, contact))
+        }
+    }
+}

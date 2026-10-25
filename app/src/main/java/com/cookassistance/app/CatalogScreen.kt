@@ -18,6 +18,7 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 
 @Composable
-fun CatalogScreen(state: CatalogUiState, retry: () -> Unit, open: (Recipe) -> Unit) {
+fun CatalogScreen(state: CatalogUiState, retry: () -> Unit, open: (Recipe) -> Unit, openFeedback: () -> Unit) {
     LazyColumn(
         Modifier.fillMaxSize().safeDrawingPadding().testTag("recipe_list"),
         contentPadding = PaddingValues(20.dp),
@@ -39,6 +40,7 @@ fun CatalogScreen(state: CatalogUiState, retry: () -> Unit, open: (Recipe) -> Un
             Text(stringResource(R.string.tagline), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.catalog_subtitle), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            TextButton(onClick = openFeedback, modifier = Modifier.testTag("feedback_button")) { Text(stringResource(R.string.feedback)) }
         }
         when (state) {
             CatalogUiState.Loading -> item {

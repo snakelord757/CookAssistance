@@ -34,6 +34,9 @@ data class AssistRequest(val recipeId: String, val question: String)
 @Serializable
 data class AssistReply(val answer: String = "", val ignored: Boolean = false)
 
+@Serializable
+data class FeedbackRequest(val message: String, val contact: String = "")
+
 val recipeJson = Json { ignoreUnknownKeys = true }
 
 fun httpClient() = HttpClient(OkHttp) {

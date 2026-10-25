@@ -31,6 +31,15 @@
     <string name="thinking">Думаю…</string>
     <string name="ignored">Задайте вопрос по выбранному рецепту.</string>
     <string name="assist_error">Помощник недоступен. Проверьте подключение и настройку сервера, затем повторите вопрос.</string>
+    <string name="feedback">Обратная связь</string>
+    <string name="feedback_title">Обратная связь</string>
+    <string name="feedback_message">Сообщение</string>
+    <string name="feedback_contact">Контакт (необязательно)</string>
+    <string name="feedback_required">Введите сообщение</string>
+    <string name="feedback_sent">Спасибо! Отзыв отправлен.</string>
+    <string name="feedback_error">Не удалось отправить отзыв. Попробуйте ещё раз.</string>
+    <string name="send">Отправить</string>
+    <string name="sending">Отправляем…</string>
     <string name="ingredients">Ингредиенты</string>
     <string name="steps">Шаги приготовления</string>
     <string name="type_soup">Суп</string>
