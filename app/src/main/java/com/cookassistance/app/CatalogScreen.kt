@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 
 @Composable
-fun CatalogScreen(state: CatalogUiState, retry: () -> Unit, open: (Recipe) -> Unit, openFeedback: () -> Unit) {
+fun CatalogScreen(state: CatalogUiState, retry: () -> Unit, open: (Recipe) -> Unit, openFeedback: () -> Unit, openFavorites: () -> Unit) {
     LazyColumn(
         Modifier.fillMaxSize().safeDrawingPadding().testTag("recipe_list"),
         contentPadding = PaddingValues(20.dp),
@@ -40,7 +40,10 @@ fun CatalogScreen(state: CatalogUiState, retry: () -> Unit, open: (Recipe) -> Un
             Text(stringResource(R.string.tagline), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.catalog_subtitle), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            TextButton(onClick = openFeedback, modifier = Modifier.testTag("feedback_button")) { Text(stringResource(R.string.feedback)) }
+            androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = openFavorites, modifier = Modifier.testTag("favorites_button")) { Text(stringResource(R.string.favorites)) }
+                TextButton(onClick = openFeedback, modifier = Modifier.testTag("feedback_button")) { Text(stringResource(R.string.feedback)) }
+            }
         }
         when (state) {
             CatalogUiState.Loading -> item {

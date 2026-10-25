@@ -7,15 +7,26 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import kotlinx.coroutines.flow.Flow
 
 interface RecipeRepository {
+    val favorites: Flow<List<Recipe>>
     suspend fun list(): List<Recipe>
     suspend fun get(id: String): Recipe
+    suspend fun save(recipe: Recipe)
+    suspend fun remove(id: String)
 }
 
-class NetworkRecipeRepository(private val http: HttpClient, private val baseUrl: String) : RecipeRepository {
+class RecipeRepositoryImpl(
+    private val http: HttpClient,
+    private val baseUrl: String,
+    private val store: FavoriteStore,
+) : RecipeRepository {
+    override val favorites: Flow<List<Recipe>> = store.observe()
     override suspend fun list(): List<Recipe> = http.get("${baseUrl.trimEnd('/')}/recipes").body()
-    override suspend fun get(id: String): Recipe = http.get("${baseUrl.trimEnd('/')}/recipes/$id").body()
+    override suspend fun get(id: String): Recipe = store.find(id) ?: http.get("${baseUrl.trimEnd('/')}/recipes/$id").body()
+    override suspend fun save(recipe: Recipe) = store.save(recipe)
+    override suspend fun remove(id: String) = store.remove(id)
 }
 
 interface Assistant {

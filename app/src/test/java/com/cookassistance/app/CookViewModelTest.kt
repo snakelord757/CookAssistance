@@ -3,6 +3,7 @@ package com.cookassistance.app
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -24,6 +25,8 @@ class CookViewModelTest {
 
     private class FakeRepo(var items: List<Recipe>, var fail: Boolean = false) : RecipeRepository {
         var getFail = false
+        var saveFail = false
+        override val favorites = MutableStateFlow<List<Recipe>>(emptyList())
         override suspend fun list(): List<Recipe> {
             if (fail) error("offline")
             return items
@@ -31,6 +34,13 @@ class CookViewModelTest {
         override suspend fun get(id: String): Recipe {
             if (getFail) error("offline")
             return items.first { it.id == id }
+        }
+        override suspend fun save(recipe: Recipe) {
+            if (saveFail) error("disk full")
+            favorites.value = favorites.value.filterNot { it.id == recipe.id } + recipe
+        }
+        override suspend fun remove(id: String) {
+            favorites.value = favorites.value.filterNot { it.id == id }
         }
     }
 
@@ -99,8 +109,11 @@ class CookViewModelTest {
     @Test fun switchingRecipeDiscardsStaleDetail() = runTest(dispatcher) {
         val pending = CompletableDeferred<Recipe>()
         val repo = object : RecipeRepository {
+            override val favorites = MutableStateFlow<List<Recipe>>(emptyList())
             override suspend fun list(): List<Recipe> = listOf(recipe("r1"), recipe("r2"))
             override suspend fun get(id: String): Recipe = if (id == "r1") pending.await() else recipe("r2")
+            override suspend fun save(recipe: Recipe) {}
+            override suspend fun remove(id: String) {}
         }
         val model = vm(repo)
         runCurrent()
@@ -170,5 +183,30 @@ class CookViewModelTest {
         model.ask(); runCurrent()
         assertTrue(model.cooking.value.ignored)
         assertEquals("", model.cooking.value.answer)
+    }
+
+    // favorites
+
+    @Test fun toggleSavesAndRemovesFavorite() = runTest(dispatcher) {
+        val repo = FakeRepo(listOf(recipe("r1")))
+        val model = vm(repo)
+        runCurrent()
+        model.toggle(recipe("r1")); runCurrent()
+        assertEquals(listOf("r1"), model.favorites.value.map { it.id })
+        model.toggle(recipe("r1")); runCurrent()
+        assertTrue(model.favorites.value.isEmpty())
+    }
+
+    @Test fun toggleFailureShowsSaveErrorAndNextSucceeds() = runTest(dispatcher) {
+        val repo = FakeRepo(listOf(recipe("r1"))).apply { saveFail = true }
+        val model = vm(repo)
+        runCurrent()
+        model.toggle(recipe("r1")); runCurrent()
+        assertTrue(model.saveError.value)
+        assertTrue(model.favorites.value.isEmpty())
+        repo.saveFail = false
+        model.toggle(recipe("r1")); runCurrent()
+        assertEquals(listOf("r1"), model.favorites.value.map { it.id })
+        assertFalse(model.saveError.value)
     }
 }

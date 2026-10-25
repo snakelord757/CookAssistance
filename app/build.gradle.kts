@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 android {
     namespace = "com.cookassistance.app"
@@ -25,12 +26,14 @@ android {
     buildFeatures { compose = true; buildConfig = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_21; targetCompatibility = JavaVersion.VERSION_21 }
 }
+ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui); implementation(libs.compose.material3)
     implementation(libs.activity); implementation(libs.lifecycle.compose)
     implementation(libs.lifecycle.viewmodel); implementation(libs.lifecycle.savedstate)
     implementation(libs.navigation3)
+    implementation(libs.room); ksp(libs.room.compiler)
     implementation(libs.ktor.client.core); implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content); implementation(libs.ktor.json)
     implementation(libs.coil.compose); implementation(libs.coil.network)

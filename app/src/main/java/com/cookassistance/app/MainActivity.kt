@@ -28,6 +28,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class Detail(val id: String) : NavKey
 @Serializable data class Cooking(val id: String) : NavKey
 @Serializable data object Feedback : NavKey
+@Serializable data object Favorites : NavKey
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,6 +52,9 @@ class MainActivity : ComponentActivity() {
     val catalog by vm.catalog.collectAsStateWithLifecycle()
     val detail by vm.detail.collectAsStateWithLifecycle()
     val cooking by vm.cooking.collectAsStateWithLifecycle()
+    val favorites by vm.favorites.collectAsStateWithLifecycle()
+    val saving by vm.saving.collectAsStateWithLifecycle()
+    val saveError by vm.saveError.collectAsStateWithLifecycle()
     val feedback by fbVm.state.collectAsStateWithLifecycle()
     val stack = rememberNavBackStack(Catalog)
     val navigation = remember(stack) { CookNavigation(stack) }
@@ -62,11 +66,23 @@ class MainActivity : ComponentActivity() {
             onBack = { back(stack.last()) },
             entryProvider = entryProvider {
                 entry<Catalog> {
-                    CatalogScreen(catalog, vm::loadCatalog, { navigation.open(Catalog, revision, Detail(it.id)) }, { navigation.open(Catalog, revision, Feedback) })
+                    CatalogScreen(
+                        catalog,
+                        vm::loadCatalog,
+                        { navigation.open(Catalog, revision, Detail(it.id)) },
+                        { navigation.open(Catalog, revision, Feedback) },
+                        { navigation.open(Catalog, revision, Favorites) },
+                    )
                 }
                 entry<Detail> { key ->
                     LaunchedEffect(key.id) { vm.select(key.id) }
-                    DetailScreen(detail, { vm.select(key.id) }, { back(key) }, { navigation.open(key, revision, Cooking(key.id)) })
+                    DetailScreen(
+                        detail, favorites, saving, saveError,
+                        { vm.select(key.id) },
+                        { back(key) },
+                        { navigation.open(key, revision, Cooking(key.id)) },
+                        vm::toggle,
+                    )
                 }
                 entry<Cooking> { key ->
                     LaunchedEffect(key.id) { vm.startCooking(key.id) }
@@ -74,6 +90,9 @@ class MainActivity : ComponentActivity() {
                 }
                 entry<Feedback> {
                     FeedbackScreen(feedback, fbVm::message, fbVm::contact, fbVm::submit, { back(Feedback) })
+                }
+                entry<Favorites> {
+                    FavoritesScreen(favorites, { navigation.open(Favorites, revision, Detail(it.id)) }, { back(Favorites) })
                 }
             },
         )

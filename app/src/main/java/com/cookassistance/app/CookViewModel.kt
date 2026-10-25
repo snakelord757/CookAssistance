@@ -42,13 +42,25 @@ class CookViewModel(private val recipes: RecipeRepository, private val assistant
     private val _cooking = MutableStateFlow(CookingState())
     val cooking: StateFlow<CookingState> = _cooking.asStateFlow()
 
+    private val _favorites = MutableStateFlow<List<Recipe>>(emptyList())
+    val favorites: StateFlow<List<Recipe>> = _favorites.asStateFlow()
+
+    private val _saving = MutableStateFlow(false)
+    val saving: StateFlow<Boolean> = _saving.asStateFlow()
+
+    private val _saveError = MutableStateFlow(false)
+    val saveError: StateFlow<Boolean> = _saveError.asStateFlow()
+
     private var catalogJob: Job? = null
     private var detailJob: Job? = null
     private var assistJob: Job? = null
     private var selectedId: String? = null
     private var cookingId: String? = null
 
-    init { loadCatalog() }
+    init {
+        loadCatalog()
+        viewModelScope.launch { recipes.favorites.collect { _favorites.value = it } }
+    }
 
     fun loadCatalog() {
         catalogJob?.cancel()
@@ -78,6 +90,24 @@ class CookViewModel(private val recipes: RecipeRepository, private val assistant
                 throw e
             } catch (_: Exception) {
                 if (selectedId == id) _detail.value = DetailUiState.Error
+            }
+        }
+    }
+
+    fun toggle(recipe: Recipe) {
+        if (_saving.value) return
+        val remove = _favorites.value.any { it.id == recipe.id }
+        _saving.value = true
+        _saveError.value = false
+        viewModelScope.launch {
+            try {
+                if (remove) recipes.remove(recipe.id) else recipes.save(recipe)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _saveError.value = true
+            } finally {
+                _saving.value = false
             }
         }
     }

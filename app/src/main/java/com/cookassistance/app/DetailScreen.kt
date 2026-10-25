@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,7 +28,16 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 
 @Composable
-fun DetailScreen(state: DetailUiState, retry: () -> Unit, back: () -> Unit, cook: () -> Unit) {
+fun DetailScreen(
+    state: DetailUiState,
+    favorites: List<Recipe>,
+    saving: Boolean,
+    saveError: Boolean,
+    retry: () -> Unit,
+    back: () -> Unit,
+    cook: () -> Unit,
+    toggle: (Recipe) -> Unit,
+) {
     LazyColumn(
         Modifier.fillMaxSize().safeDrawingPadding().testTag("recipe_detail"),
         contentPadding = PaddingValues(20.dp),
@@ -54,6 +64,14 @@ fun DetailScreen(state: DetailUiState, retry: () -> Unit, back: () -> Unit, cook
                     Button(onClick = cook, modifier = Modifier.fillMaxWidth().testTag("cook_button")) {
                         Text(stringResource(R.string.cook))
                     }
+                    OutlinedButton(
+                        onClick = { toggle(recipe) },
+                        modifier = Modifier.fillMaxWidth().testTag("favorite_button"),
+                        enabled = !saving,
+                    ) {
+                        Text(stringResource(if (favorites.any { it.id == recipe.id }) R.string.saved else R.string.save))
+                    }
+                    if (saveError) Text(stringResource(R.string.save_error), color = MaterialTheme.colorScheme.error)
                 }
                 item {
                     Text(stringResource(R.string.ingredients), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
