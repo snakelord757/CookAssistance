@@ -1,5 +1,6 @@
 package com.cookassistance.app
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,9 +13,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -30,7 +33,15 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 
 @Composable
-fun CatalogScreen(state: CatalogUiState, retry: () -> Unit, open: (Recipe) -> Unit, openFeedback: () -> Unit, openFavorites: () -> Unit) {
+fun CatalogScreen(
+    state: CatalogUiState,
+    selectedType: String?,
+    onTypeFilter: (String?) -> Unit,
+    retry: () -> Unit,
+    open: (Recipe) -> Unit,
+    openFeedback: () -> Unit,
+    openFavorites: () -> Unit,
+) {
     LazyColumn(
         Modifier.fillMaxSize().safeDrawingPadding().testTag("recipe_list"),
         contentPadding = PaddingValues(20.dp),
@@ -40,9 +51,28 @@ fun CatalogScreen(state: CatalogUiState, retry: () -> Unit, open: (Recipe) -> Un
             Text(stringResource(R.string.tagline), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.catalog_subtitle), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = openFavorites, modifier = Modifier.testTag("favorites_button")) { Text(stringResource(R.string.favorites)) }
                 TextButton(onClick = openFeedback, modifier = Modifier.testTag("feedback_button")) { Text(stringResource(R.string.feedback)) }
+            }
+        }
+        if (state is CatalogUiState.Content && state.recipes.isNotEmpty()) {
+            item {
+                val types = state.recipes.map { it.type }.distinct()
+                Row(Modifier.horizontalScroll(rememberScrollState()).testTag("type_filter"), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = selectedType == null,
+                        onClick = { onTypeFilter(null) },
+                        label = { Text(stringResource(R.string.all)) },
+                    )
+                    types.forEach { type ->
+                        FilterChip(
+                            selected = selectedType == type,
+                            onClick = { onTypeFilter(type) },
+                            label = { Text(typeLabel(type)) },
+                        )
+                    }
+                }
             }
         }
         when (state) {
@@ -52,8 +82,13 @@ fun CatalogScreen(state: CatalogUiState, retry: () -> Unit, open: (Recipe) -> Un
             }
             CatalogUiState.Error -> item { ErrorMessage(R.string.load_error, retry) }
             CatalogUiState.Empty -> item { Text(stringResource(R.string.empty)) }
-            is CatalogUiState.Content -> items(state.recipes, key = { it.id }) { recipe ->
-                RecipeCard(recipe) { open(recipe) }
+            is CatalogUiState.Content -> {
+                val filtered = if (selectedType == null) state.recipes else state.recipes.filter { it.type == selectedType }
+                if (filtered.isEmpty()) {
+                    item { Text(stringResource(R.string.empty)) }
+                } else {
+                    items(filtered, key = { it.id }) { recipe -> RecipeCard(recipe) { open(recipe) } }
+                }
             }
         }
     }

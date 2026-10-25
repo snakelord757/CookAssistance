@@ -56,6 +56,7 @@ class MainActivity : ComponentActivity() {
     val favorites by vm.favorites.collectAsStateWithLifecycle()
     val saving by vm.saving.collectAsStateWithLifecycle()
     val saveError by vm.saveError.collectAsStateWithLifecycle()
+    val selectedType by vm.selectedType.collectAsStateWithLifecycle()
     val feedback by fbVm.state.collectAsStateWithLifecycle()
     val stack = rememberNavBackStack(Catalog)
     val navigation = remember(stack) { CookNavigation(stack) }
@@ -68,7 +69,7 @@ class MainActivity : ComponentActivity() {
             entryProvider = entryProvider {
                 entry<Catalog> {
                     CatalogScreen(
-                        catalog,
+                        catalog, selectedType, vm::setTypeFilter,
                         vm::loadCatalog,
                         { navigation.open(Catalog, revision, Detail(it.id)) },
                         { navigation.open(Catalog, revision, Feedback) },

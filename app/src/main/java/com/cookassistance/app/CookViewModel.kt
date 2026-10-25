@@ -62,6 +62,9 @@ class CookViewModel(private val recipes: RecipeRepository, private val assistant
     private val _timer = MutableStateFlow(TimerState())
     val timer: StateFlow<TimerState> = _timer.asStateFlow()
 
+    private val _selectedType = MutableStateFlow<String?>(null)
+    val selectedType: StateFlow<String?> = _selectedType.asStateFlow()
+
     private var catalogJob: Job? = null
     private var timerJob: Job? = null
     private var detailJob: Job? = null
@@ -104,6 +107,10 @@ class CookViewModel(private val recipes: RecipeRepository, private val assistant
                 if (selectedId == id) _detail.value = DetailUiState.Error
             }
         }
+    }
+
+    fun setTypeFilter(type: String?) {
+        _selectedType.value = type
     }
 
     fun toggle(recipe: Recipe) {
