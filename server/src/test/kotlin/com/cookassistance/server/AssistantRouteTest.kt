@@ -30,6 +30,12 @@ class DecisionTest {
     @Test fun blankAnswerThrowsInvalidUpstream() {
         assertFailsWith<InvalidUpstream> { validatedDecision("""{"related":true,"answer":""}""") }
     }
+
+    @Test fun timerMinutesIsValidated() {
+        assertEquals(10, validatedDecision("""{"related":true,"answer":"Таймер","timerMinutes":10}""").timerMinutes)
+        assertFailsWith<InvalidUpstream> { validatedDecision("""{"related":true,"answer":"Таймер","timerMinutes":0}""") }
+        assertFailsWith<InvalidUpstream> { validatedDecision("""{"related":true,"answer":"Таймер","timerMinutes":999}""") }
+    }
 }
 
 class AssistantRouteTest {

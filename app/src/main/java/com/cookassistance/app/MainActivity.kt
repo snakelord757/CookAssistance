@@ -52,6 +52,7 @@ class MainActivity : ComponentActivity() {
     val catalog by vm.catalog.collectAsStateWithLifecycle()
     val detail by vm.detail.collectAsStateWithLifecycle()
     val cooking by vm.cooking.collectAsStateWithLifecycle()
+    val timer by vm.timer.collectAsStateWithLifecycle()
     val favorites by vm.favorites.collectAsStateWithLifecycle()
     val saving by vm.saving.collectAsStateWithLifecycle()
     val saveError by vm.saveError.collectAsStateWithLifecycle()
@@ -86,7 +87,12 @@ class MainActivity : ComponentActivity() {
                 }
                 entry<Cooking> { key ->
                     LaunchedEffect(key.id) { vm.startCooking(key.id) }
-                    CookingScreen(detail, cooking, vm::question, vm::ask, { back(key) })
+                    CookingScreen(
+                        detail, cooking, timer,
+                        vm::question, vm::ask,
+                        vm::startTimer, vm::pauseTimer, vm::resumeTimer, vm::resetTimer,
+                        { back(key) },
+                    )
                 }
                 entry<Feedback> {
                     FeedbackScreen(feedback, fbVm::message, fbVm::contact, fbVm::submit, { back(Feedback) })

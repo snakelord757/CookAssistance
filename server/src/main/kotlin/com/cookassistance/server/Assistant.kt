@@ -20,7 +20,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.serialization.Serializable
 
 @Serializable data class AssistRequest(val recipeId: String, val question: String)
-@Serializable data class AssistReply(val answer: String = "", val ignored: Boolean = false)
+@Serializable data class AssistReply(val answer: String = "", val ignored: Boolean = false, val timerMinutes: Int? = null)
 @Serializable data class Message(val role: String, val content: String)
 @Serializable data class Completion(
     val model: String, val messages: List<Message>, val temperature: Double = 0.0,
@@ -28,7 +28,7 @@ import kotlinx.serialization.Serializable
 )
 @Serializable data class Choice(val message: Message)
 @Serializable data class CompletionResult(val choices: List<Choice>)
-@Serializable data class Decision(val related: Boolean, val answer: String = "")
+@Serializable data class Decision(val related: Boolean, val answer: String = "", val timerMinutes: Int? = null)
 
 interface AssistantService { suspend fun answer(question: AssistRequest): AssistReply }
 class MissingConfiguration : Exception()
@@ -40,7 +40,8 @@ fun validatedDecision(raw: String): AssistReply {
     val decision = try { json.decodeFromString<Decision>(raw) } catch (_: Exception) { throw InvalidUpstream() }
     if (!decision.related) return AssistReply(ignored = true)
     if (decision.answer.isBlank() || decision.answer.length > 3000) throw InvalidUpstream()
-    return AssistReply(answer = decision.answer.trim())
+    val timer = decision.timerMinutes?.let { minutes -> if (minutes in 1..180) minutes else throw InvalidUpstream() }
+    return AssistReply(answer = decision.answer.trim(), timerMinutes = timer)
 }
 
 class DeepSeekAssistant(
@@ -60,6 +61,7 @@ class DeepSeekAssistant(
             |For a related question return JSON {"related":true,"answer":"concise Russian answer"}.
             |Use only provided facts. Ingredient quantities ARE provided in the recipe data; do not invent missing values. Do not claim allergy safety.
             |Do not provide content on other topics even when mixed into a cooking question. Output only JSON.
+            |If the user requests a cooking timer (e.g., \"set a timer for 10 minutes\"), include an integer field \"timerMinutes\" (1..180) in the JSON; otherwise omit it.
             |RECIPE DATA: $context""".trimMargin()
         val result = http.post("https://api.deepseek.com/chat/completions") {
             bearerAuth(key); contentType(ContentType.Application.Json)

@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -208,5 +209,60 @@ class CookViewModelTest {
         model.toggle(recipe("r1")); runCurrent()
         assertEquals(listOf("r1"), model.favorites.value.map { it.id })
         assertFalse(model.saveError.value)
+    }
+
+    // timer
+
+    @Test fun timerCountsDownAndMarksDone() = runTest(dispatcher) {
+        val model = vm(FakeRepo(listOf(recipe("r1"))))
+        runCurrent()
+        model.startTimer(1)
+        runCurrent()
+        assertEquals(60, model.timer.value.remainingSeconds)
+        assertTrue(model.timer.value.running)
+        advanceTimeBy(60_000)
+        runCurrent()
+        assertEquals(0, model.timer.value.remainingSeconds)
+        assertTrue(model.timer.value.done)
+        assertFalse(model.timer.value.running)
+    }
+
+    @Test fun pauseAndResumeTimer() = runTest(dispatcher) {
+        val model = vm(FakeRepo(listOf(recipe("r1"))))
+        runCurrent()
+        model.startTimer(2)
+        runCurrent()
+        assertTrue(model.timer.value.running)
+        advanceTimeBy(10_000)
+        runCurrent()
+        model.pauseTimer()
+        assertEquals(110, model.timer.value.remainingSeconds)
+        assertFalse(model.timer.value.running)
+        model.resumeTimer()
+        runCurrent()
+        assertTrue(model.timer.value.running)
+        advanceTimeBy(10_000)
+        runCurrent()
+        assertEquals(100, model.timer.value.remainingSeconds)
+    }
+
+    @Test fun invalidTimerMinutesAreIgnored() = runTest(dispatcher) {
+        val model = vm(FakeRepo(listOf(recipe("r1"))))
+        runCurrent()
+        model.startTimer(0)
+        assertEquals(0, model.timer.value.totalSeconds)
+        model.startTimer(999)
+        assertEquals(0, model.timer.value.totalSeconds)
+    }
+
+    @Test fun askWithTimerIntentStartsTimer() = runTest(dispatcher) {
+        val assistant = FakeAssistant(result = AssistReply(answer = "Таймер на 10 минут", timerMinutes = 10))
+        val model = vm(FakeRepo(listOf(recipe("r1"))), assistant)
+        runCurrent()
+        model.startCooking("r1")
+        model.question("Поставь таймер на 10 минут")
+        model.ask(); runCurrent()
+        assertEquals(600, model.timer.value.totalSeconds)
+        assertTrue(model.timer.value.running)
     }
 }

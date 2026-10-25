@@ -45,6 +45,13 @@
     <string name="feedback_error">Не удалось отправить отзыв. Попробуйте ещё раз.</string>
     <string name="send">Отправить</string>
     <string name="sending">Отправляем…</string>
+    <string name="timer">Таймер</string>
+    <string name="timer_minutes">%1$d мин</string>
+    <string name="start">Старт</string>
+    <string name="pause">Пауза</string>
+    <string name="resume">Продолжить</string>
+    <string name="reset">Сброс</string>
+    <string name="timer_done">Время вышло!</string>
     <string name="ingredients">Ингредиенты</string>
     <string name="steps">Шаги приготовления</string>
     <string name="type_soup">Суп</string>

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,6 +33,13 @@ data class CookingState(
     val answerSequence: Int = 0,
 )
 
+data class TimerState(
+    val totalSeconds: Int = 0,
+    val remainingSeconds: Int = 0,
+    val running: Boolean = false,
+    val done: Boolean = false,
+)
+
 class CookViewModel(private val recipes: RecipeRepository, private val assistant: Assistant) : ViewModel() {
     private val _catalog = MutableStateFlow<CatalogUiState>(CatalogUiState.Loading)
     val catalog: StateFlow<CatalogUiState> = _catalog.asStateFlow()
@@ -51,7 +59,11 @@ class CookViewModel(private val recipes: RecipeRepository, private val assistant
     private val _saveError = MutableStateFlow(false)
     val saveError: StateFlow<Boolean> = _saveError.asStateFlow()
 
+    private val _timer = MutableStateFlow(TimerState())
+    val timer: StateFlow<TimerState> = _timer.asStateFlow()
+
     private var catalogJob: Job? = null
+    private var timerJob: Job? = null
     private var detailJob: Job? = null
     private var assistJob: Job? = null
     private var selectedId: String? = null
@@ -112,6 +124,39 @@ class CookViewModel(private val recipes: RecipeRepository, private val assistant
         }
     }
 
+    fun startTimer(minutes: Int) {
+        if (minutes <= 0 || minutes > 180) return
+        timerJob?.cancel()
+        _timer.value = TimerState(totalSeconds = minutes * 60, remainingSeconds = minutes * 60)
+        runTimer()
+    }
+
+    fun pauseTimer() {
+        timerJob?.cancel()
+        _timer.update { it.copy(running = false) }
+    }
+
+    fun resumeTimer() {
+        if (_timer.value.running || _timer.value.remainingSeconds <= 0) return
+        runTimer()
+    }
+
+    fun resetTimer() {
+        timerJob?.cancel()
+        _timer.value = TimerState()
+    }
+
+    private fun runTimer() {
+        timerJob = viewModelScope.launch {
+            _timer.update { it.copy(running = true) }
+            while (_timer.value.remainingSeconds > 0) {
+                delay(1000)
+                _timer.update { it.copy(remainingSeconds = it.remainingSeconds - 1) }
+            }
+            _timer.update { it.copy(running = false, done = true) }
+        }
+    }
+
     fun startCooking(id: String) {
         cookingId = id
         assistJob?.cancel()
@@ -131,13 +176,16 @@ class CookViewModel(private val recipes: RecipeRepository, private val assistant
         assistJob = viewModelScope.launch {
             try {
                 val reply = assistant.ask(id, question)
-                if (cookingId == id) _cooking.update {
-                    it.copy(
-                        thinking = false,
-                        answer = if (reply.ignored) "" else reply.answer,
-                        ignored = reply.ignored,
-                        answerSequence = it.answerSequence + 1,
-                    )
+                if (cookingId == id) {
+                    _cooking.update {
+                        it.copy(
+                            thinking = false,
+                            answer = if (reply.ignored) "" else reply.answer,
+                            ignored = reply.ignored,
+                            answerSequence = it.answerSequence + 1,
+                        )
+                    }
+                    reply.timerMinutes?.let { startTimer(it) }
                 }
             } catch (e: CancellationException) {
                 throw e
