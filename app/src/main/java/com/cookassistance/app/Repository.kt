@@ -13,6 +13,9 @@ interface RecipeRepository {
     val favorites: Flow<List<Recipe>>
     suspend fun list(): List<Recipe>
     suspend fun get(id: String): Recipe
+    suspend fun dishOfTheDay(): Recipe
+    suspend fun collections(): List<CollectionInfo>
+    suspend fun byCollection(id: String): List<Recipe>
     suspend fun save(recipe: Recipe)
     suspend fun remove(id: String)
 }
@@ -25,6 +28,9 @@ class RecipeRepositoryImpl(
     override val favorites: Flow<List<Recipe>> = store.observe()
     override suspend fun list(): List<Recipe> = http.get("${baseUrl.trimEnd('/')}/recipes").body()
     override suspend fun get(id: String): Recipe = store.find(id) ?: http.get("${baseUrl.trimEnd('/')}/recipes/$id").body()
+    override suspend fun dishOfTheDay(): Recipe = http.get("${baseUrl.trimEnd('/')}/recipes/dish-of-the-day").body()
+    override suspend fun collections(): List<CollectionInfo> = http.get("${baseUrl.trimEnd('/')}/collections").body()
+    override suspend fun byCollection(id: String): List<Recipe> = http.get("${baseUrl.trimEnd('/')}/collections/$id/recipes").body()
     override suspend fun save(recipe: Recipe) = store.save(recipe)
     override suspend fun remove(id: String) = store.remove(id)
 }

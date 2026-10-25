@@ -36,6 +36,7 @@ import coil3.compose.AsyncImage
 fun CatalogScreen(
     state: CatalogUiState,
     selectedType: String?,
+    dishOfTheDay: Recipe?,
     onTypeFilter: (String?) -> Unit,
     retry: () -> Unit,
     open: (Recipe) -> Unit,
@@ -54,6 +55,17 @@ fun CatalogScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = openFavorites, modifier = Modifier.testTag("favorites_button")) { Text(stringResource(R.string.favorites)) }
                 TextButton(onClick = openFeedback, modifier = Modifier.testTag("feedback_button")) { Text(stringResource(R.string.feedback)) }
+            }
+        }
+        dishOfTheDay?.let { dish ->
+            item {
+                ElevatedCard(onClick = { open(dish) }, modifier = Modifier.fillMaxWidth().testTag("dish_of_the_day")) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(stringResource(R.string.dish_of_the_day), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        Text(dish.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Text(typeLabel(dish.type), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
             }
         }
         if (state is CatalogUiState.Content && state.recipes.isNotEmpty()) {

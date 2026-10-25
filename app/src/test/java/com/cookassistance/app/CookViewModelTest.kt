@@ -36,6 +36,9 @@ class CookViewModelTest {
             if (getFail) error("offline")
             return items.first { it.id == id }
         }
+        override suspend fun dishOfTheDay(): Recipe = items.first()
+        override suspend fun collections(): List<CollectionInfo> = emptyList()
+        override suspend fun byCollection(id: String): List<Recipe> = emptyList()
         override suspend fun save(recipe: Recipe) {
             if (saveFail) error("disk full")
             favorites.value = favorites.value.filterNot { it.id == recipe.id } + recipe
@@ -113,6 +116,9 @@ class CookViewModelTest {
             override val favorites = MutableStateFlow<List<Recipe>>(emptyList())
             override suspend fun list(): List<Recipe> = listOf(recipe("r1"), recipe("r2"))
             override suspend fun get(id: String): Recipe = if (id == "r1") pending.await() else recipe("r2")
+            override suspend fun dishOfTheDay(): Recipe = recipe("r1")
+            override suspend fun collections(): List<CollectionInfo> = emptyList()
+            override suspend fun byCollection(id: String): List<Recipe> = emptyList()
             override suspend fun save(recipe: Recipe) {}
             override suspend fun remove(id: String) {}
         }

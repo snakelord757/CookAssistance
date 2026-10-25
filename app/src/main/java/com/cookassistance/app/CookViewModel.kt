@@ -65,6 +65,15 @@ class CookViewModel(private val recipes: RecipeRepository, private val assistant
     private val _selectedType = MutableStateFlow<String?>(null)
     val selectedType: StateFlow<String?> = _selectedType.asStateFlow()
 
+    private val _dishOfTheDay = MutableStateFlow<Recipe?>(null)
+    val dishOfTheDay: StateFlow<Recipe?> = _dishOfTheDay.asStateFlow()
+
+    private val _collections = MutableStateFlow<List<CollectionInfo>>(emptyList())
+    val collections: StateFlow<List<CollectionInfo>> = _collections.asStateFlow()
+
+    private val _collectionRecipes = MutableStateFlow<List<Recipe>>(emptyList())
+    val collectionRecipes: StateFlow<List<Recipe>> = _collectionRecipes.asStateFlow()
+
     private var catalogJob: Job? = null
     private var timerJob: Job? = null
     private var detailJob: Job? = null
@@ -75,6 +84,8 @@ class CookViewModel(private val recipes: RecipeRepository, private val assistant
     init {
         loadCatalog()
         viewModelScope.launch { recipes.favorites.collect { _favorites.value = it } }
+        loadDishOfTheDay()
+        loadCollections()
     }
 
     fun loadCatalog() {
@@ -111,6 +122,24 @@ class CookViewModel(private val recipes: RecipeRepository, private val assistant
 
     fun setTypeFilter(type: String?) {
         _selectedType.value = type
+    }
+
+    fun loadDishOfTheDay() {
+        viewModelScope.launch {
+            _dishOfTheDay.value = try { recipes.dishOfTheDay() } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
+        }
+    }
+
+    fun loadCollections() {
+        viewModelScope.launch {
+            _collections.value = try { recipes.collections() } catch (e: CancellationException) { throw e } catch (_: Exception) { emptyList() }
+        }
+    }
+
+    fun loadCollection(id: String) {
+        viewModelScope.launch {
+            _collectionRecipes.value = try { recipes.byCollection(id) } catch (e: CancellationException) { throw e } catch (_: Exception) { emptyList() }
+        }
     }
 
     fun toggle(recipe: Recipe) {
