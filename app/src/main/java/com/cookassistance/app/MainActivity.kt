@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -34,13 +35,14 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable private fun catalogViewModel(): CatalogViewModel {
+@Composable private fun cookViewModel(): CookViewModel {
     val app = LocalContext.current.applicationContext as CookApplication
-    return viewModel(factory = viewModelFactory { initializer { CatalogViewModel(app.recipes) } })
+    return viewModel(factory = viewModelFactory { initializer { CookViewModel(app.recipes) } })
 }
 
-@Composable fun CookApp(vm: CatalogViewModel = catalogViewModel()) {
-    val state by vm.state.collectAsStateWithLifecycle()
+@Composable fun CookApp(vm: CookViewModel = cookViewModel()) {
+    val catalog by vm.catalog.collectAsStateWithLifecycle()
+    val detail by vm.detail.collectAsStateWithLifecycle()
     val stack = rememberNavBackStack(Catalog)
     val navigation = remember(stack) { CookNavigation(stack) }
     val revision = navigation.revision
@@ -50,8 +52,11 @@ class MainActivity : ComponentActivity() {
             backStack = stack,
             onBack = { back(stack.last()) },
             entryProvider = entryProvider {
-                entry<Catalog> { CatalogScreen(state, vm::load, { navigation.open(Catalog, revision, Detail(it.id)) }) }
-                entry<Detail> { key -> DetailScreen(key.id) { back(key) } }
+                entry<Catalog> { CatalogScreen(catalog, vm::loadCatalog, { navigation.open(Catalog, revision, Detail(it.id)) }) }
+                entry<Detail> { key ->
+                    LaunchedEffect(key.id) { vm.select(key.id) }
+                    DetailScreen(detail, { vm.select(key.id) }, { back(key) })
+                }
             },
         )
     }

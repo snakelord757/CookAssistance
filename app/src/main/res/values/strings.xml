@@ -4,11 +4,14 @@
     <string name="catalog_subtitle">Выберите блюдо — поможем на каждом шаге</string>
     <string name="loading">Загружаем рецепты…</string>
     <string name="load_error">Не удалось загрузить рецепты. Проверьте подключение.</string>
+    <string name="detail_error">Не удалось открыть этот рецепт.</string>
     <string name="empty">Здесь пока нет рецептов</string>
     <string name="retry">Повторить</string>
     <string name="back">Назад</string>
     <string name="minutes">%1$d мин</string>
-    <string name="recipe_id">Рецепт: %1$s</string>
+    <string name="servings">Порций: %1$d</string>
+    <string name="ingredients">Ингредиенты</string>
+    <string name="steps">Шаги приготовления</string>
     <string name="type_soup">Суп</string>
     <string name="type_salad">Салат</string>
     <string name="type_main">Основное блюдо</string>
