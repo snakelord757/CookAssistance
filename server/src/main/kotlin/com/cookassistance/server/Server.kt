@@ -82,10 +82,12 @@ fun main() {
         install(ClientContentNegotiation) { json(json) }
         install(HttpTimeout) { requestTimeoutMillis = 12_000; connectTimeoutMillis = 5_000; socketTimeoutMillis = 12_000 }
     }
-    val service = DeepSeekAssistant(
+    val service = selectAssistant(
+        System.getenv("ASSIST_BACKEND"),
         http,
         System.getenv("DEEPSEEK_API_KEY").orEmpty(),
         System.getenv("DEEPSEEK_MODEL") ?: "deepseek-chat",
+        System.getenv("LOCAL_MODEL_URL") ?: "http://127.0.0.1:8000",
         store,
     )
     embeddedServer(Netty, host = "127.0.0.1", port = 8080) {
