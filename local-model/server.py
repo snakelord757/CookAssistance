@@ -4,6 +4,12 @@ Loads the already-trained Qwen3-0.6B base and the existing LoRA adapter V2 and
 serves them over HTTP. No re-training happens here: the weights are read from
 disk and merged in memory.
 
+Exposes two endpoints:
+  - POST /v1/chat/completions  — OpenAI-compatible chat API (recipe in the
+    system message, the question in the user message). This is the primary,
+    chat-mode interface.
+  - POST /answer               — legacy stateless {recipe, question} interface.
+
 Model paths are configurable so the server is portable between machines:
   MODEL_BASE_DIR     default D:\\ModelTraining\\PretrainedLocalModel\\models\\qwen-local
   MODEL_ADAPTER_DIR  default D:\\ModelTraining\\PretrainedLocalModel\\runs\\v2\\adapter
@@ -11,6 +17,7 @@ Model paths are configurable so the server is portable between machines:
 import os
 from pathlib import Path
 from threading import Lock
+from typing import List
 
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
@@ -77,29 +84,11 @@ generation_lock = Lock()
 app = FastAPI(title="Recipe Assistant V2 (local)")
 
 
-class Question(BaseModel):
-    recipe: str = Field(min_length=1, max_length=20000)
-    question: str = Field(min_length=1, max_length=2000)
-    max_new_tokens: int = Field(default=160, ge=1, le=512)
-
-
-@app.get("/health")
-def health():
-    return {
-        "status": "ok",
-        "model": "Qwen3-0.6B + recipe adapter V2",
-        "device": DEVICE,
-    }
-
-
-@app.post("/answer")
-def answer(request: Question):
+def generate_answer(recipe: str, question: str, max_new_tokens: int) -> dict:
+    """Runs one greedy generation with the trained prompt format."""
     messages = [
         {"role": "system", "content": SYSTEM},
-        {
-            "role": "user",
-            "content": request.recipe + "\n\nВопрос: " + request.question,
-        },
+        {"role": "user", "content": recipe + "\n\nВопрос: " + question},
     ]
 
     prompt = tokenizer.apply_chat_template(
@@ -114,7 +103,7 @@ def answer(request: Question):
         input_tokens = inputs["input_ids"].shape[1]
 
         # Application limit, not the architecture's maximum context.
-        if input_tokens + request.max_new_tokens > 4096:
+        if input_tokens + max_new_tokens > 4096:
             raise HTTPException(
                 status_code=413,
                 detail="Рецепт и вопрос слишком длинные.",
@@ -125,7 +114,7 @@ def answer(request: Question):
         with torch.inference_mode():
             output = model.generate(
                 **inputs,
-                max_new_tokens=request.max_new_tokens,
+                max_new_tokens=max_new_tokens,
                 do_sample=False,
                 pad_token_id=tokenizer.eos_token_id,
                 use_cache=True,
@@ -138,7 +127,7 @@ def answer(request: Question):
         ).strip()
 
         truncated = (
-            len(generated) == request.max_new_tokens
+            len(generated) == max_new_tokens
             and generated[-1].item() != tokenizer.eos_token_id
         )
 
@@ -147,4 +136,76 @@ def answer(request: Question):
         "input_tokens": input_tokens,
         "output_tokens": len(generated),
         "truncated": truncated,
+    }
+
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "model": "Qwen3-0.6B + recipe adapter V2",
+        "device": DEVICE,
+    }
+
+
+class Question(BaseModel):
+    recipe: str = Field(min_length=1, max_length=20000)
+    question: str = Field(min_length=1, max_length=2000)
+    max_new_tokens: int = Field(default=160, ge=1, le=512)
+
+
+@app.post("/answer")
+def answer(request: Question):
+    return generate_answer(request.recipe, request.question, request.max_new_tokens)
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    model: str = "qwen3-recipe-v2"
+    messages: List[ChatMessage] = Field(min_length=1)
+    max_tokens: int = Field(default=160, ge=1, le=512)
+
+
+@app.post("/v1/chat/completions")
+def chat_completions(request: ChatRequest):
+    """OpenAI-compatible chat endpoint.
+
+    The recipe is passed once as a system message; the question is the last user
+    message. The fixed assistant system prompt is applied server-side, matching
+    the prompt the adapter was trained with.
+    """
+    recipe = ""
+    question = ""
+    for message in request.messages:
+        if message.role == "system":
+            recipe = message.content
+        elif message.role == "user":
+            question = message.content
+
+    if not recipe.strip():
+        raise HTTPException(status_code=400, detail="system message with the recipe is required")
+    if not question.strip():
+        raise HTTPException(status_code=400, detail="a user message is required")
+
+    result = generate_answer(recipe, question, request.max_tokens)
+    return {
+        "id": "chatcmpl-local",
+        "object": "chat.completion",
+        "model": request.model,
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": result["answer"]},
+                "finish_reason": "length" if result["truncated"] else "stop",
+            }
+        ],
+        "usage": {
+            "prompt_tokens": result["input_tokens"],
+            "completion_tokens": result["output_tokens"],
+            "total_tokens": result["input_tokens"] + result["output_tokens"],
+        },
     }

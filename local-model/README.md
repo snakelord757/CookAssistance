@@ -56,7 +56,28 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/answer" -Method Post `
 
 ## API
 
-- `GET /health` → `{status, model, device}`
-- `POST /answer` → тело `{recipe, question, max_new_tokens?}` → `{answer, input_tokens, output_tokens, truncated}`
+Основной режим — чат, совместимый с OpenAI `/v1/chat/completions`. Рецепт передаётся
+один раз в системном сообщении (контекст), вопрос — в сообщении пользователя.
+Фиксированный системный промпт ассистента подставляется на сервере.
 
-Это обычный HTTP API, не OpenAI-совместимый. Рецепт передаётся с каждым вопросом.
+- `GET /health` → `{status, model, device}`
+- `POST /v1/chat/completions` → `{model, messages:[{role,content}]}` → OpenAI-совместимый `{choices:[{message:{role,content}}]}`.
+- `POST /answer` → `{recipe, question, max_new_tokens?}` → `{answer, ...}` (устаревший stateless-режим).
+
+Пример чата:
+
+```powershell
+$body = @{
+  messages = @(
+    @{ role = "system"; content = "Каша. Порций: 2.`nИнгредиенты: овсяные хлопья — 100 г; молоко — 400 мл.`n1. Нагрейте молоко.`n2. Добавьте хлопья." },
+    @{ role = "user"; content = "Пересчитай все ингредиенты на 4 порции." }
+  )
+} | ConvertTo-Json
+
+(Invoke-RestMethod -Uri "http://127.0.0.1:8000/v1/chat/completions" -Method Post `
+  -ContentType "application/json; charset=utf-8" `
+  -Body ([System.Text.Encoding]::UTF8.GetBytes($body))).choices[0].message.content
+```
+
+Ожидаемый результат: **200 г хлопьев и 800 мл молока** (формулировка модели может
+отличаться).
