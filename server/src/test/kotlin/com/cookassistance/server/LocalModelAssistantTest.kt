@@ -65,7 +65,7 @@ class LocalModelAssistantTest {
             capturedUrl = request.url.toString()
             capturedBody = (request.body as TextContent).text
             respond(
-                content = """{"answer":"Варите 5 минут","truncated":false}""",
+                content = """{"choices":[{"message":{"role":"assistant","content":"Варите 5 минут"}}]}""",
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
             )
@@ -78,7 +78,8 @@ class LocalModelAssistantTest {
         assertEquals("Варите 5 минут", reply.answer)
         assertNull(reply.timerMinutes)
         assertEquals(false, reply.ignored)
-        assertEquals("http://127.0.0.1:8000/answer", capturedUrl)
+        assertEquals("http://127.0.0.1:8000/v1/chat/completions", capturedUrl)
+        assertTrue(capturedBody.contains(""""role":"system""""))
         assertTrue(capturedBody.contains("Овсяная каша. Порций: 2."))
         assertTrue(capturedBody.contains("Сколько варить?"))
     }
@@ -86,7 +87,7 @@ class LocalModelAssistantTest {
     @Test fun blankAnswerThrowsInvalidUpstream() = runBlocking {
         val engine = MockEngine {
             respond(
-                content = """{"answer":"  "}""",
+                content = """{"choices":[{"message":{"role":"assistant","content":"  "}}]}""",
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
             )

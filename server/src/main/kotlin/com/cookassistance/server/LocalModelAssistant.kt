@@ -9,8 +9,10 @@ import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
-@Serializable data class LocalAnswerRequest(val recipe: String, val question: String)
-@Serializable data class LocalAnswerReply(val answer: String = "", val truncated: Boolean = false)
+@Serializable data class LocalChatMessage(val role: String, val content: String)
+@Serializable data class LocalChatRequest(val model: String = "qwen3-recipe-v2", val messages: List<LocalChatMessage>)
+@Serializable data class LocalChatChoice(val message: LocalChatMessage)
+@Serializable data class LocalChatReply(val choices: List<LocalChatChoice>)
 
 /** Formats a decimal amount like Python's `f'{v:g}'.replace('.', ',')` used at training time. */
 fun num(value: Double): String =
@@ -25,8 +27,9 @@ fun recipeText(recipe: Recipe): String {
 
 /**
  * Assistant backend backed by the locally trained model (Recipe Assistant V2).
- * Forwards the recipe text + question to the Python inference server and maps its
- * natural-language answer into [AssistReply]. No structured `ignored`/`timerMinutes`.
+ * Calls the local model's OpenAI-compatible chat endpoint, passing the recipe as
+ * the system message and the question as the user message (chat mode). Maps the
+ * natural-language answer into [AssistReply]; no structured `ignored`/`timerMinutes`.
  */
 class LocalModelAssistant(
     private val http: HttpClient,
@@ -35,11 +38,14 @@ class LocalModelAssistant(
 ) : AssistantService {
     override suspend fun answer(question: AssistRequest): AssistReply {
         val recipe = store.get(question.recipeId) ?: throw UnknownRecipe()
-        val reply = http.post("${baseUrl.trimEnd('/')}/answer") {
+        val reply = http.post("${baseUrl.trimEnd('/')}/v1/chat/completions") {
             contentType(ContentType.Application.Json)
-            setBody(LocalAnswerRequest(recipeText(recipe), question.question))
-        }.body<LocalAnswerReply>()
-        val answer = reply.answer.trim()
+            setBody(LocalChatRequest(messages = listOf(
+                LocalChatMessage("system", recipeText(recipe)),
+                LocalChatMessage("user", question.question),
+            )))
+        }.body<LocalChatReply>()
+        val answer = reply.choices.firstOrNull()?.message?.content?.trim().orEmpty()
         if (answer.isBlank()) throw InvalidUpstream()
         return AssistReply(answer = answer)
     }
