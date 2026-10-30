@@ -1,0 +1,10 @@
+# Recipe Assistant V2 — local inference server
+# Verified environment: Windows x64, Python 3.12, PyTorch 2.7.1+cu128, CUDA 12.8.
+# Install PyTorch separately (CUDA wheel), then the rest from this file.
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.7.1+cu128
+transformers==4.57.6
+peft==0.18.1
+accelerate==1.15.0
+fastapi
+uvicorn
