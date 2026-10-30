@@ -15,4 +15,5 @@ dependencies {
     implementation(libs.ktor.client.content)
     testImplementation(kotlin("test-junit"))
     testImplementation(libs.ktor.server.test)
+    testImplementation(libs.ktor.client.mock)
 }
