@@ -63,3 +63,6 @@ server/build/install/server/bin/server
 ```
 
 Данные хранятся в памяти (14 рецептов, 8 типов блюд, 3 подборки); изменение данных не требует пересборки Android-приложения.
+
+Первый шаг execution loop: [bootstrap gateway](docs/gateway-bootstrap.md).
+При первом запуске — защищённая установка с подтверждением оператора; затем только readiness-проверка.

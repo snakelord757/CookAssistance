@@ -11,6 +11,7 @@ from pathlib import Path
 import sys
 
 FILES = (
+    "scripts/bootstrap_gateway.py", "scripts/package_runtime.py",
     "scripts/trusted_runtime.py", "scripts/runtime_integrity.py",
     "scripts/execution_loop.py", "scripts/execution_flow.py", "scripts/context_gate.py",
     "scripts/context_release.py", "scripts/loop_security.py", "scripts/model_adapters.py",
