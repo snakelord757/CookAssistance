@@ -1,0 +1,28 @@
+{
+  "task_id": "CA-LM-02",
+  "run_id": "CA-LM-20261030-01",
+  "parent_task_id": "CA-LM",
+  "status": "Locally Ready",
+  "phase": "Done (/assist local chat backend + Android UI smoke verified)",
+  "owner": "/root",
+  "base_sha": "571c1e7",
+  "candidate_sha": "7fcc2e9",
+  "branch": "feat/CA-LM-local-model",
+  "worktree": "D:/CookAssistance/workflow/worktrees/CA-LM",
+  "plan_version": "1",
+  "review": {
+    "sha": "7fcc2e9",
+    "status": "APPROVE",
+    "review_mode": "self",
+    "report": "workflow/tasks/CA-LM/review.md"
+  },
+  "checks": {
+    "server_test": "PASS (18 tests, включая LocalModelAssistant chat-формат)",
+    "live_assist_local": "PASS (/assist при ASSIST_BACKEND=local вернул ингредиенты борща 10/10)",
+    "android_ui_smoke": "PASS (каталог → деталка → готовка → вопрос → ответ модели в UI + TTS)",
+    "smoke_video": "reports/CA-LM/CA-LM-20261030-01/smoke-video.mp4",
+    "default_backend": "PASS (deepseek при отсутствии ASSIST_BACKEND)"
+  },
+  "validation_scope": "task",
+  "next_step": "done"
+}
