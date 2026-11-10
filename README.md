@@ -12,6 +12,18 @@
 
 Сервер слушает `http://127.0.0.1:8080` (порт `8080`). Для Android-эмулятора адрес — `http://10.0.2.2:8080`.
 
+На Android 17 / API 37 debug-приложению нужно разрешить локальную сеть после
+установки APK (подставьте serial своего эмулятора):
+
+```powershell
+adb -s emulator-5560 shell pm grant com.cookassistance.app android.permission.ACCESS_LOCAL_NETWORK
+```
+
+Разрешение объявлено только в debug manifest для локального backend. Release
+использует настроенный HTTPS endpoint. После выдачи разрешения нажмите
+«Повторить» или перезапустите приложение. Требование платформы описано в
+[Android local network permission](https://developer.android.com/privacy-and-security/local-network-permission).
+
 Альтернативно собрать дистрибутив и запустить скрипт:
 
 ```
