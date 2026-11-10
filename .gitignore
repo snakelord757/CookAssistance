@@ -12,3 +12,7 @@ local.properties
 *.aab
 *.jks
 *.keystore
+
+# Defense in depth: actual review credentials must live OUTSIDE any checkout.
+deepseek.key
+*.secret
